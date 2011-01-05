@@ -58,13 +58,13 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 		y3 = [0, 0, 0, 0, y1 + dy, y1 - dy, y4, y4][res[1]].toFixed(3);
 	var path = ["M", x1.toFixed(3), y1.toFixed(3), "C", x2, y2, x3, y3, x4.toFixed(3), y4.toFixed(3)].join(",");
 	if (line && line.line) {
-		line.bg && line.bg.attr({path: path});
-		line.line.attr({path: path});
+		line.bg && line.bg.setAttr({path: path});
+		line.line.setAttr({path: path});
 	} else {
 		var color = typeof line == "string" ? line : "#000";
 		return {
-			bg: bg && bg.split && this.path(path).attr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
-			line: this.path(path).attr({stroke: color, fill: "none"}),
+			bg: bg && bg.split && this.path(path).initZoom() && this.path(path).setAttr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
+			line: this.path(path).initZoom() && this.path(path).setAttr({stroke: color, fill: "none"}),
 			from: obj1,
 			to: obj2
 		};
@@ -92,7 +92,7 @@ function KBElement(element) {
 			}
 			this.animate({"fill-opacity": .1}, 500);
 			for(var i = 0; i < links.length; i++) {
-				links[i].animate({"fill": this.attr("fill")}, 500);
+				links[i].line.attr({"stroke-width": 2});
 			}
 		},
 		move = function(dx, dy) {
@@ -118,16 +118,17 @@ function KBElement(element) {
 			});
 			
 			for (var i = links.length; i--;) {
-                this.paper.connection(links[i]);
-            }
-
+				this.paper.connection(links[i]);
+			}
 		},
 		up = function() {
 			this.setAttr({
 				cursor: "pointer"
 			});
 			this.animate({"fill-opacity": this.oop}, 500);
-
+			for(var i = 0; i < links.length; i++) {
+                                links[i].line.attr({"stroke-width": .8});
+                        }
 		};
 		
 		this.raphElement.drag(move, start, up);
@@ -143,6 +144,9 @@ function KBElement(element) {
 			this.links.push(link);
 			this.linkedElements[i].links.push(link);
 		}
+		for(var i = 0; i < this.links.length; i++) {
+			this.links[i].line.attr({"stroke-width": .8});
+		}
 	}
 }
 
@@ -150,17 +154,18 @@ var KBGraphic = new function() {
 	this.paper;
 	this.width;
 	this.height;
-	this.div_id;
+	this.idPaper;
 	this.elements;
 	this.links;
 	
 	this.init = function(id, w, h) {
 		this.height = h;
 		this.width = w;
-		this.div_id = id;
+		this.idPaper = id;
 		this.elements = new Array();
 		this.links = new Array();
-		this.paper = Raphael(this.div_id, this.width, this.height).initZoom();
+		this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
+		var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: true, drag: false});
 	};
 		
 	this.draw = function() {
@@ -204,6 +209,23 @@ var KBGraphic = new function() {
 			z.linkedElements.push(stage2[l]);
 		}
 		z.drawLink();
+
+		this.elements.concat(stage1, stage2);
+		this.elements.push(z);
+	};
+
+	this.setZoomer = function(idZoomer) {
+		$('<div id="' + idZoomer + '"></div><p id="' + idZoomer + '_label">Zoom : <span id="' + idZoomer + '_value">100</span>%</p>').insertAfter("#" + this.idPaper);
+		$("#"+idZoomer).slider({
+			animate: true,
+			min: 5,
+			max: 350,
+			value: 100,
+			slide: function(event, ui) {
+				$("#" + idZoomer + "_value").text(ui.value);
+				KBGraphic.zoom(ui.value);
+			}
+		});
 	};
 	
 	this.zoom = function(zoom) {

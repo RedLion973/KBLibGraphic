@@ -11,27 +11,17 @@
 		<script src="jquery-ui.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="raphael.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="raphael.zoom.js" type="text/javascript" charset="utf-8"></script>
+		<script src="raphael.zpd.js" type="text/javascript" charset="utf-8"></script>
 		<script src="kb.graphic.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
 				KBGraphic.init("kb_visual", 960, 500);
 				KBGraphic.draw();
-				$("#kb_visual_zoomer").slider({
-					animate: true,
-					min: 5,
-					max: 350,
-					value: 100,
-					slide: function(event, ui) {
-						$("#zoom_value").text(ui.value);
-						KBGraphic.zoom(ui.value);
-					}
-				});
+				KBGraphic.setZoomer("kb_visual_zoomer");
 			});	    
 		</script>
     </head>
     <body>
-	<div id="kb_visual"></div>
-	<div id="kb_visual_zoomer"></div>
-	<p id="zoom_label">Zoom : <span id="zoom_value">100</span>%</p>
+	<div id="kb_visual"></div>	
     </body>
 </html>

@@ -13,9 +13,9 @@ body {
 	width: 200px;
 	margin: 25px auto;
 }
-#zoom_label {
+#kb_visual_zoomer_label {
 	text-align: center;
 }
-#zoom_value {
+#kb_visual_zoomer_value {
 	font-weight: bold;
 }

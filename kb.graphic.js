@@ -113,8 +113,8 @@ function KBElement(element) {
 			}
 			
 			this.setAttr({
-				cx: tmp_cx, 
-				cy: tmp_cy
+				cx: this.ox + dx, 
+				cy: this.oy + dy
 			});
 			
 			for (var i = links.length; i--;) {
@@ -157,15 +157,19 @@ var KBGraphic = new function() {
 	this.idPaper;
 	this.elements;
 	this.links;
+	this.zpd;
 	
 	this.init = function(id, w, h) {
 		this.height = h;
 		this.width = w;
-		this.idPaper = id;
+		this.idPaper = id + "_graph";
+		$("#" + id).addClass("kb_visual");
+		$("#" + this.idPaper).addClass("kb_visual_graph");
 		this.elements = new Array();
 		this.links = new Array();
 		this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
-		var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: true, drag: false});
+		$('<div style="clear: both;">&nbsp;</div>').insertAfter("#" + this.idPaper);
+		this.zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
 	};
 		
 	this.draw = function() {
@@ -215,16 +219,106 @@ var KBGraphic = new function() {
 	};
 
 	this.setZoomer = function(idZoomer) {
-		$('<div id="' + idZoomer + '"></div><p id="' + idZoomer + '_label">Zoom : <span id="' + idZoomer + '_value">100</span>%</p>').insertAfter("#" + this.idPaper);
-		$("#"+idZoomer).slider({
+		var canvas = this.zpd;
+		var svg = this.paper;
+		$('<div id="' + idZoomer + '_vpan"></div>').insertBefore("#" + this.idPaper);
+		$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
+		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
+		$('<div id="' + idZoomer + '"></div><p id="' + idZoomer + '_label">Zoom : <span id="' + idZoomer + '_value">100</span>%</p>').appendTo(".kb_visual_zoom");
+		$('<div id="' + idZoomer + '_value_selectors"><button value="50">50%</button><button value="100">100%</button><button value="150">150%</button><button value="200">200%</button><button value="250">250%</button></div>').insertAfter("#" + idZoomer + "_label");
+		$('<div id="' + idZoomer + '_mini"></div>').insertAfter("#" + idZoomer);
+		$('<div id="' + idZoomer + '_mini_active">&nbsp;</div>').appendTo("#" + idZoomer + "_mini");
+		$("#" + idZoomer).addClass("kb_visual_zoomer");
+		$("#" + idZoomer + "_label").addClass("kb_visual_zoomer_label");
+		$("#" + idZoomer + "_value").addClass("kb_visual_zoomer_value");
+		$("#" + idZoomer + "_value_selectors").addClass("kb_visual_zoomer_value_selectors");
+		$("#" + idZoomer + "_vpan").addClass("kb_visual_zoomer_vpan");
+		$("#" + idZoomer + "_hpan").addClass("kb_visual_zoomer_hpan");
+		$("#" + idZoomer + "_mini").addClass("kb_visual_zoomer_mini");
+		$("#" + idZoomer + "_mini_active").addClass("kb_visual_zoomer_mini_active");
+		function doZoom(event, ui) {
+			$("#" + idZoomer + "_value").text(ui.value);
+			KBGraphic.zoom(ui.value);
+			if(ui.value > 100) {
+				$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
+				$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
+			}
+			else {
+				$("#" + idZoomer + "_mini_active").css("width", "200px");
+				$("#" + idZoomer + "_mini_active").css("height", "107px");
+			}
+		}
+		var zoomSlider = $("#" + idZoomer).slider({
 			animate: true,
+			orientation: "vertical",
+			range: "min",
 			min: 5,
 			max: 350,
 			value: 100,
+			change: function(event, ui) {
+				$("#" + idZoomer + "_value").text(ui.value);
+				KBGraphic.zoom(ui.value);
+				if(ui.value > 100) {
+					$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
+					$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
+				}
+				else {
+					$("#" + idZoomer + "_mini_active").css("width", "200px");
+					$("#" + idZoomer + "_mini_active").css("height", "107px");
+				}
+			},
 			slide: function(event, ui) {
 				$("#" + idZoomer + "_value").text(ui.value);
 				KBGraphic.zoom(ui.value);
+				if(ui.value > 100) {
+					$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
+					$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
+				}
+				else {
+					$("#" + idZoomer + "_mini_active").css("width", "200px");
+					$("#" + idZoomer + "_mini_active").css("height", "107px");
+				}
 			}
+		});
+		$("#" + idZoomer + "_vpan").slider({
+			animate: true,
+			orientation: "vertical",
+			range: "min",
+			min: 0,
+			max: this.height,
+			value: 0,
+			step: 1,
+			slide: function(event, ui) {
+				var matrix = canvas.gelem.getAttribute("transform");
+				if(!matrix) {
+					matrix = "matrix(1, 0, 0, 1, 0, 0)";
+				}
+				var reg = new RegExp("[(,]+","g");
+				var matrix_exploded = matrix.split(reg);
+				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + matrix_exploded[5] + ", "+ ui.value + ")");
+			}
+		});
+		$("#" + idZoomer + "_hpan").slider({
+			animate: true,
+			range: "min",
+			min: 0,
+			max: this.width,
+			value: 0,
+			step: 1,
+			slide: function(event, ui) {
+				var matrix = canvas.gelem.getAttribute("transform");
+				if(!matrix) {
+					matrix = "matrix(1, 0, 0, 1, 0, 0)";
+				}
+				var reg = new RegExp("[(,]+","g");
+				var matrix_exploded = matrix.split(reg);
+				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + ui.value + ", " + matrix_exploded[6]);
+			}
+		});
+		$("#" + idZoomer + "_value_selectors button").each(function() {
+			$(this).click(function() {
+				zoomSlider.slider("value",$(this).attr("value"));
+			});
 		});
 	};
 	

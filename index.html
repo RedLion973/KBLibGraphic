@@ -15,13 +15,15 @@
 		<script src="kb.graphic.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
-				KBGraphic.init("kb_visual", 960, 500);
+				KBGraphic.init("kb_visual", 920, 500);
 				KBGraphic.draw();
 				KBGraphic.setZoomer("kb_visual_zoomer");
 			});	    
 		</script>
     </head>
     <body>
-	<div id="kb_visual"></div>	
+	<div id="kb_visual">
+	    <div id="kb_visual_graph"></div>	
+        </div>
     </body>
 </html>

@@ -95,23 +95,7 @@ function KBElement(element) {
 				links[i].line.attr({"stroke-width": 2});
 			}
 		},
-		move = function(dx, dy) {
-			var tmp_cx = this.ox + dx; 
-			var tmp_cy = this.oy + dy;
-			
-			if(tmp_cx < (this.getBBox().width / 2)) {
-				tmp_cx = (this.getBBox().width / 2);
-			}
-			if(tmp_cx > this.paper.width - (this.getBBox().width / 2)) {
-				tmp_cx = this.paper.width - (this.getBBox().width / 2);
-			}
-			if(tmp_cy < (this.getBBox().height / 2)) {
-				tmp_cy = (this.getBBox().height / 2);
-			}
-			if(tmp_cy > this.paper.height - (this.getBBox().height / 2)) {
-				tmp_cy = this.paper.height - (this.getBBox().height / 2);
-			}
-			
+		move = function(dx, dy) {			
 			this.setAttr({
 				cx: this.ox + dx, 
 				cy: this.oy + dy
@@ -236,18 +220,6 @@ var KBGraphic = new function() {
 		$("#" + idZoomer + "_hpan").addClass("kb_visual_zoomer_hpan");
 		$("#" + idZoomer + "_mini").addClass("kb_visual_zoomer_mini");
 		$("#" + idZoomer + "_mini_active").addClass("kb_visual_zoomer_mini_active");
-		function doZoom(event, ui) {
-			$("#" + idZoomer + "_value").text(ui.value);
-			KBGraphic.zoom(ui.value);
-			if(ui.value > 100) {
-				$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
-				$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
-			}
-			else {
-				$("#" + idZoomer + "_mini_active").css("width", "200px");
-				$("#" + idZoomer + "_mini_active").css("height", "107px");
-			}
-		}
 		var zoomSlider = $("#" + idZoomer).slider({
 			animate: true,
 			orientation: "vertical",
@@ -283,19 +255,20 @@ var KBGraphic = new function() {
 		$("#" + idZoomer + "_vpan").slider({
 			animate: true,
 			orientation: "vertical",
-			range: "min",
+			range: "max",
 			min: 0,
 			max: this.height,
-			value: 0,
+			value: this.height,
 			step: 1,
 			slide: function(event, ui) {
 				var matrix = canvas.gelem.getAttribute("transform");
 				if(!matrix) {
-					matrix = "matrix(1, 0, 0, 1, 0, 0)";
+					matrix = "matrix(1, 0, 0, 1, 0, " + KBGraphic.height + ")";
 				}
 				var reg = new RegExp("[(,]+","g");
 				var matrix_exploded = matrix.split(reg);
-				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + matrix_exploded[5] + ", "+ ui.value + ")");
+				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + matrix_exploded[5] + ", "+ (ui.value - KBGraphic.height) + ")");
+				$("#" + idZoomer + "_mini_active").css("top", (- (ui.value - KBGraphic.height) * 0.1) + "px");
 			}
 		});
 		$("#" + idZoomer + "_hpan").slider({
@@ -312,7 +285,7 @@ var KBGraphic = new function() {
 				}
 				var reg = new RegExp("[(,]+","g");
 				var matrix_exploded = matrix.split(reg);
-				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + ui.value + ", " + matrix_exploded[6]);
+				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", -" + (ui.value) + ", " + matrix_exploded[6]);
 			}
 		});
 		$("#" + idZoomer + "_value_selectors button").each(function() {

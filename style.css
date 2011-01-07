@@ -55,4 +55,7 @@
 	height: 107px;
 	border: 2px #A2A2A2 solid;
 	background-color: #DDDDDD;
+	position: relative;
+	left: 0;
+	top: 0;
 }

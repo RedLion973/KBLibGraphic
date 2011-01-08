@@ -71,6 +71,53 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 	}
 };
 
+Raphael.fn.panControls = {
+	arrow: function (x1, y1, x2, y2, size, color, branch) {
+	    var angle = Math.atan2(x1-x2,y2-y1);
+	    angle = (angle / (2 * Math.PI)) * 360;
+	    var arrowPath = this.path("M" + x2 + " " + y2 + " L" + (x2 - size) + " " + (y2 - size) + " L" + (x2 - size) + " " + (y2 + size) + " L" + x2 + " " + y2 );
+		arrowPath.attr({
+			"fill": color,
+			"stroke": color,
+			"cursor": "pointer"
+		});
+		arrowPath.rotate((90+angle), x2, y2);
+		if(branch == true) {
+			var a = (y2 - y1) / (x2 - x1);
+			if((a == 'Infinity') || (a == '-Infinity')) a = 0;
+			var b = y1 - (a * x1);
+			var x3 = (-(-2*x2-2*a*y2) + Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
+			if(((x3 < x2) && (x3 < x1)) || ((x3 > x2) && (x3 > x1))) {
+				x3 = (-(-2*x2-2*a*y2) - Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
+			}
+			var y3 = a * x3 + b;
+			if(x1 == x2) {
+				x3 = x1;
+				if(y1 < y2) {
+					y3 = y2 - size;
+				}
+				else {
+					y3 = y2 + size;
+				}
+			}
+			if(y1 == y2) {
+				y3 = y1;
+				if(x1 < x2) {
+					x3 = x2 - size;
+				}
+				else {
+					x3 = x2 + size;
+				}
+			}
+		    var linePath = this.path("M" + x1 + " " + y1 + " L" + x3 + " " + y3).attr("stroke", color).attr("stroke-width", size / 3);
+		    return [linePath,arrowPath];
+		}
+		else {
+			return arrowPath;
+		}
+	}
+}
+
 function KBElement(element) {
 	this.raphElement = element;
 	this.linkedElements = new Array();
@@ -136,24 +183,48 @@ function KBElement(element) {
 
 var KBGraphic = new function() {
 	this.paper;
+	this.viewport;
 	this.width;
 	this.height;
 	this.idPaper;
 	this.elements;
-	this.links;
-	this.zpd;
+	this.zoom;
+	this.minZoom;
+	this.maxZoom;
 	
-	this.init = function(id, w, h) {
+	this.init = function(id, w, h, minZoom, maxZoom) {
 		this.height = h;
 		this.width = w;
 		this.idPaper = id + "_graph";
-		$("#" + id).addClass("kb_visual");
-		$("#" + this.idPaper).addClass("kb_visual_graph");
+		$('<div id="' + this.idPaper + '"></div>').appendTo('#' + id);
+		$('#' + this.idPaper).css('float', 'left');
+		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid');
+		$('#' + this.idPaper).css('margin', '20px');
 		this.elements = new Array();
-		this.links = new Array();
-		this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
-		$('<div style="clear: both;">&nbsp;</div>').insertAfter("#" + this.idPaper);
-		this.zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
+		if(minZoom > maxZoom) {
+			var invertZoom = minZoom;
+			minZoom = maxZoom;
+			maxZoom = invertZoom;
+		}
+		if((minZoom < 5) || (minZoom > 100) || (maxZoom < 100) || (maxZoom > 1000) || ((minZoom == maxZoom) && (minZoom != 100))) {
+			alert("Valeurs de zoom Min et Max trop faible ou trop élevée ou égales entre elles : utilisation des valeurs par défaut min = 25 et max = 300");
+			minZoom = 25;
+			maxZoom = 300;
+		}
+		if (minZoom == maxZoom == 100) {
+			this.zoom = false;
+			this.paper = Raphael(this.idPaper, this.width, this.height);
+		}
+		else {
+			this.minZoom = minZoom;
+			this.maxZoom = maxZoom;
+			this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
+			this.processZoom(1);
+			var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
+			this.viewport = zpd.gelem;
+			$('<div style="clear: both;">&nbsp;</div>').insertAfter('#' + this.idPaper);
+			this.setZoomControls(this.paper, this.viewport);
+		}
 	};
 		
 	this.draw = function() {
@@ -202,11 +273,47 @@ var KBGraphic = new function() {
 		this.elements.push(z);
 	};
 
-	this.setZoomer = function(idZoomer) {
-		var canvas = this.zpd;
-		var svg = this.paper;
-		$('<div id="' + idZoomer + '_vpan"></div>').insertBefore("#" + this.idPaper);
-		$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
+	this.setZoomControls = function(paper, viewport) {
+		var idZoomer = this.idPaper + "_zoom";
+		
+		$('<div id="' + idZoomer + '_pan_controls"></div>').insertAfter('#' + this.idPaper);
+		var panBox = Raphael(idZoomer + '_pan_controls', 100, 100);
+		$('#' + idZoomer + '_pan_controls').css('float', 'left');
+		$('#' + idZoomer + '_pan_controls').css('clear', 'right');
+		$('#' + idZoomer + '_pan_controls').css('margin-left', '20px');
+		$('#' + idZoomer + '_pan_controls').css('margin-top', '20px');
+		var panArrows = new Array();
+		panArrows.push(
+			panBox.panControls.arrow(50, 50, 50, 15, 6, '#A2A2A2', true)[1],
+			panBox.panControls.arrow(50, 50, 50, 85, 6, '#A2A2A2', true)[1],
+			panBox.panControls.arrow(50, 50, 15, 50, 6, '#A2A2A2', true)[1],
+			panBox.panControls.arrow(50, 50, 85, 50, 6, '#A2A2A2', true)[1],
+			panBox.panControls.arrow(30, 30, 29, 29, 6, '#A2A2A2', false),
+			panBox.panControls.arrow(70, 30, 71, 29, 6, '#A2A2A2', false),
+			panBox.panControls.arrow(30, 70, 29, 71, 6, '#A2A2A2', false),
+			panBox.panControls.arrow(70, 70, 71, 71, 6, '#A2A2A2', false)
+		);
+		panBox.circle(50, 50, 45).attr({
+			"stroke": "none",
+			"fill": "r#FFFFFF-#B9DDC0"
+		}).toBack();
+		for(var i = 0; i < panArrows.length; i++) {
+			panArrows[i].mouseover(function() {
+				this.attr({
+					"fill": "#25963A",
+					"stroke": "#25963A"
+				});
+			});
+			panArrows[i].mouseout(function() {
+				this.attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2"
+				});
+			});
+		}
+		
+		
+		/*$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
 		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
 		$('<div id="' + idZoomer + '"></div><p id="' + idZoomer + '_label">Zoom : <span id="' + idZoomer + '_value">100</span>%</p>').appendTo(".kb_visual_zoom");
 		$('<div id="' + idZoomer + '_value_selectors"><button value="50">50%</button><button value="100">100%</button><button value="150">150%</button><button value="200">200%</button><button value="250">250%</button></div>').insertAfter("#" + idZoomer + "_label");
@@ -292,10 +399,10 @@ var KBGraphic = new function() {
 			$(this).click(function() {
 				zoomSlider.slider("value",$(this).attr("value"));
 			});
-		});
+		});*/
 	};
 	
-	this.zoom = function(zoom) {
+	this.processZoom = function(zoom) {
 		this.paper.setZoom(zoom / 100);
 	}
 };

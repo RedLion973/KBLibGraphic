@@ -79,7 +79,6 @@ Raphael.fn.panControls = {
 		arrowPath.attr({
 			"fill": color,
 			"stroke": color,
-			"cursor": "pointer"
 		});
 		arrowPath.rotate((90+angle), x2, y2);
 		if(branch == true) {
@@ -184,11 +183,13 @@ function KBElement(element) {
 var KBGraphic = new function() {
 	this.paper; // main canvas for drawing
 	this.viewport; // canvas zone the user can see
+	this.matrix; // matrix for the viewport transform attribute
 	this.width; // canvas width
 	this.height; // canvas height
 	this.idPaper; // CSS id of the div containing the graphical elements
 	this.elements; // list of elements the canvas contains
 	this.zoom; // zoom flag
+	this.zoomValue; // zoom flag
 	this.minZoom; // minimum value of zoom
 	this.maxZoom; // maximum value of zoom
 	
@@ -202,6 +203,8 @@ var KBGraphic = new function() {
 		$('#' + this.idPaper).css('float', 'left');				  //
 		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid'); //  CSS for the div
 		$('#' + this.idPaper).css('margin', '20px'); 			  //
+		$('<div id="' + this.idPaper + '_clear">&nbsp;</div>').appendTo('#' + id); // adds a div with clear style for a nice display
+		$('#' + this.idPaper + '_clear').css('clear', 'both');	
 		this.elements = new Array();
 		// if zoom is not enabled
 		if(enableZoom == false) {
@@ -223,15 +226,25 @@ var KBGraphic = new function() {
 			}
 			// creates canvas without the zoom feature
 			else {
+				this.paper = Raphael(this.idPaper, this.width, this.height).initZoom(); // draws the main canvas and enables intern zoom feature	
+				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false}); // enables intern pan feature				
 				this.minZoom = minZoom;
 				this.maxZoom = maxZoom;
-				this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
-				this.processZoom(1);
-				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
-				this.viewport = zpd.gelem;
-				$('<div style="clear: both;">&nbsp;</div>').insertAfter('#' + this.idPaper);
+				this.zoomValue = 1; // current zoom value set to 100%
+				this.processZoom(this.zoomValue); // sets the zoom to the current value
+				this.viewport = zpd.gelem; // sets the viewport
+				//defines the default viewport transform matrix
+				this.matrix = new Array();
+				this.updateMatrix(0, 1, "set");
+				this.updateMatrix(1, 0, "set");
+				this.updateMatrix(2, 0, "set");
+				this.updateMatrix(3, 1, "set");
+				this.updateMatrix(4, 0, "set");
+				this.updateMatrix(5, 0, "set");
+				// drawing test
+				this.draw();
 				// creates the zoom and pan feature
-				this.setZoomControls(this.paper, this.viewport);
+				this.setZoomControls(this.paper, this.viewport, this.matrix);
 			}
 		}
 	};
@@ -284,26 +297,25 @@ var KBGraphic = new function() {
 
 	//  Set Zoom Controls Function
 	// creates the zoom and pan feature
-	this.setZoomControls = function(paper, viewport) {
-		var idZoomer = this.idPaper + "_zoom"; // CSS id of the div containing the zoom & pan controls
-		
+	this.setZoomControls = function(paper, viewport, matrix) {	
 		// Pan Controls
-		$('<div id="' + idZoomer + '_pan_controls"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
-		var panBox = Raphael(idZoomer + '_pan_controls', 100, 100); // draws the controls  canvas
-		$('#' + idZoomer + '_pan_controls').css('float', 'left');		//
-		$('#' + idZoomer + '_pan_controls').css('clear', 'right');		// CSS for the div
-		$('#' + idZoomer + '_pan_controls').css('margin-left', '20px'); //  with pan controls
-		$('#' + idZoomer + '_pan_controls').css('margin-top', '20px');  //
+		var idPanControls = this.idPaper + '_pan_controls';
+		$('<div id="' + idPanControls + '"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
+		var panBox = Raphael(idPanControls, 100, 100); // draws the controls  canvas
+		$('#' + idPanControls).css('float', 'left');		//
+		$('#' + idPanControls).css('clear', 'right');		// CSS for the div
+		$('#' + idPanControls).css('margin-left', '20px'); //  with pan controls
+		$('#' + idPanControls).css('margin-top', '20px');  //
 		var panArrows = new Array(); // list of controls
 		panArrows.push(
-			panBox.panControls.arrow(50, 50, 50, 15, 6, '#A2A2A2', true)[1], // upArrow
-			panBox.panControls.arrow(50, 50, 50, 85, 6, '#A2A2A2', true)[1], // downArrow
-			panBox.panControls.arrow(50, 50, 15, 50, 6, '#A2A2A2', true)[1], // leftArrow
-			panBox.panControls.arrow(50, 50, 85, 50, 6, '#A2A2A2', true)[1], // rightArrow
-			panBox.panControls.arrow(30, 30, 29, 29, 6, '#A2A2A2', false),   // upLeftArrow
-			panBox.panControls.arrow(70, 30, 71, 29, 6, '#A2A2A2', false),   // upRightArrow
-			panBox.panControls.arrow(30, 70, 29, 71, 6, '#A2A2A2', false),   // downLeftArrow
-			panBox.panControls.arrow(70, 70, 71, 71, 6, '#A2A2A2', false)    // downRightArrow
+			panBox.panControls.arrow(50, 50, 50, 15, 8, '#A2A2A2', true),    // upArrow
+			panBox.panControls.arrow(50, 50, 50, 85, 8, '#A2A2A2', true),    // downArrow
+			panBox.panControls.arrow(50, 50, 15, 50, 8, '#A2A2A2', true),    // leftArrow
+			panBox.panControls.arrow(50, 50, 85, 50, 8, '#A2A2A2', true),    // rightArrow
+			panBox.panControls.arrow(30, 30, 29, 29, 8, '#A2A2A2', false),   // upLeftArrow
+			panBox.panControls.arrow(70, 30, 71, 29, 8, '#A2A2A2', false),   // upRightArrow
+			panBox.panControls.arrow(30, 70, 29, 71, 8, '#A2A2A2', false),   // downLeftArrow
+			panBox.panControls.arrow(70, 70, 71, 71, 8, '#A2A2A2', false)    // downRightArrow
 		);
 		// draws a circle as a "background" decorator for the pan controls
 		panBox.circle(50, 50, 45).attr({
@@ -311,21 +323,271 @@ var KBGraphic = new function() {
 			"fill": "r#FFFFFF-#B9DDC0"
 		}).toBack();
 		// enables the "hover" feature
-		for(var i = 0; i < panArrows.length; i++) {
-			panArrows[i].mouseover(function() {
-				this.attr({
-					"fill": "#25963A",
-					"stroke": "#25963A"
-				});
+		panArrows[0][0].mouseover(function() {
+			panArrows[0][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
 			});
-			panArrows[i].mouseout(function() {
-				this.attr({
-					"fill": "#A2A2A2",
-					"stroke": "#A2A2A2"
-				});
+			panArrows[0][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
 			});
+		});
+		panArrows[0][0].mouseout(function() {
+			panArrows[0][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[0][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[0][1].mouseover(function() {
+			panArrows[0][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[0][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[0][1].mouseout(function() {
+			panArrows[0][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[0][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[1][0].mouseover(function() {
+			panArrows[1][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[1][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[1][0].mouseout(function() {
+			panArrows[1][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[1][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[1][1].mouseover(function() {
+			panArrows[1][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[1][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[1][1].mouseout(function() {
+			panArrows[1][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[1][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[2][0].mouseover(function() {
+			panArrows[2][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[2][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[2][0].mouseout(function() {
+			panArrows[2][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[2][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[2][1].mouseover(function() {
+			panArrows[2][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[2][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[2][1].mouseout(function() {
+			panArrows[2][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[2][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[3][0].mouseover(function() {
+			panArrows[3][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[3][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[3][0].mouseout(function() {
+			panArrows[3][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[3][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[3][1].mouseover(function() {
+			panArrows[3][0].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+			panArrows[3][1].attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[3][1].mouseout(function() {
+			panArrows[3][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+			panArrows[3][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[4].mouseover(function() {
+			this.attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[4].mouseout(function() {
+			this.attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[5].mouseover(function() {
+			this.attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[5].mouseout(function() {
+			this.attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[6].mouseover(function() {
+			this.attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[6].mouseout(function() {
+			this.attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		panArrows[7].mouseover(function() {
+			this.attr({
+				"fill": "#25963A",
+				"stroke": "#25963A",
+				"cursor": "pointer"
+			});
+		});
+		panArrows[7].mouseout(function() {
+			this.attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "default"
+			});
+		});
+		// pan feature functions
+		function moveUp(){
+			this.updateMatrix(5, 1, "-");
+			this.processMatrix();
 		}
-		
+		function moveDown(){
+			this.updateMatrix(5, 1, "+");
+			this.processMatrix();
+		}
+		function moveLeft(){
+			this.updateMatrix(4, 1, "-");
+			this.processMatrix();
+		}
+		function moveRight(){
+			this.updateMatrix(4, 1, "+");
+			this.processMatrix();
+		}
 		
 		/*$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
 		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
@@ -417,6 +679,28 @@ var KBGraphic = new function() {
 	};
 	
 	this.processZoom = function(zoom) {
-		this.paper.setZoom(zoom / 100);
+		this.zoomValue = zoom / 100;
+		this.paper.setZoom(this.zoomValue);
+	}
+	
+	this.updateMatrix = function(index, value, mode) {
+		switch(mode) {
+			case "+":
+				this.matrix[index] += value;
+				break;
+			case "-":
+				this.matrix[index] -= value;
+				break;
+			case "set":
+				this.matrix[index] = value;
+				break;
+		}
+	}
+	
+	this.processMatrix = function() {
+		this.viewport.setAttribute(
+			'transform', 
+			'matrix(' + this.matrix[0] + ', ' + this.matrix[1] + ', ' + this.matrix[2] + ', ' + this.matrix[3] + ', ' + this.matrix[4] + ', ' + this.matrix[5] + ')'
+		);
 	}
 };

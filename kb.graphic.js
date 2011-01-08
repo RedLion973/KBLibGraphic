@@ -182,48 +182,57 @@ function KBElement(element) {
 }
 
 var KBGraphic = new function() {
-	this.paper;
-	this.viewport;
-	this.width;
-	this.height;
-	this.idPaper;
-	this.elements;
-	this.zoom;
-	this.minZoom;
-	this.maxZoom;
+	this.paper; // main canvas for drawing
+	this.viewport; // canvas zone the user can see
+	this.width; // canvas width
+	this.height; // canvas height
+	this.idPaper; // CSS id of the div containing the graphical elements
+	this.elements; // list of elements the canvas contains
+	this.zoom; // zoom flag
+	this.minZoom; // minimum value of zoom
+	this.maxZoom; // maximum value of zoom
 	
-	this.init = function(id, w, h, minZoom, maxZoom) {
+	// Init function
+	// it creates the canvas and all the controls depending on the parameters
+	this.init = function(id, w, h, enableZoom, minZoom, maxZoom) {
 		this.height = h;
 		this.width = w;
-		this.idPaper = id + "_graph";
-		$('<div id="' + this.idPaper + '"></div>').appendTo('#' + id);
-		$('#' + this.idPaper).css('float', 'left');
-		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid');
-		$('#' + this.idPaper).css('margin', '20px');
+		this.idPaper = id + "_graph"; // CSS id of the div containing the canvas
+		$('<div id="' + this.idPaper + '"></div>').appendTo('#' + id); // adds the div where the canvas will be displayed
+		$('#' + this.idPaper).css('float', 'left');				  //
+		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid'); //  CSS for the div
+		$('#' + this.idPaper).css('margin', '20px'); 			  //
 		this.elements = new Array();
-		if(minZoom > maxZoom) {
-			var invertZoom = minZoom;
-			minZoom = maxZoom;
-			maxZoom = invertZoom;
-		}
-		if((minZoom < 5) || (minZoom > 100) || (maxZoom < 100) || (maxZoom > 1000) || ((minZoom == maxZoom) && (minZoom != 100))) {
-			alert("Valeurs de zoom Min et Max trop faible ou trop élevée ou égales entre elles : utilisation des valeurs par défaut min = 25 et max = 300");
-			minZoom = 25;
-			maxZoom = 300;
-		}
-		if (minZoom == maxZoom == 100) {
+		// if zoom is not enabled
+		if(enableZoom == false) {
 			this.zoom = false;
-			this.paper = Raphael(this.idPaper, this.width, this.height);
+			this.paper = Raphael(this.idPaper, this.width, this.height); // creates canvas without the zoom feature
 		}
 		else {
-			this.minZoom = minZoom;
-			this.maxZoom = maxZoom;
-			this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
-			this.processZoom(1);
-			var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
-			this.viewport = zpd.gelem;
-			$('<div style="clear: both;">&nbsp;</div>').insertAfter('#' + this.idPaper);
-			this.setZoomControls(this.paper, this.viewport);
+			// inverts max and min if misentered
+			if(minZoom > maxZoom) {
+				var invertZoom = minZoom;
+				minZoom = maxZoom;
+				maxZoom = invertZoom;
+			}
+			// checks the values, if there doesn't match, default values are used
+			if((minZoom < 5) || (minZoom > 100) || (maxZoom < 100) || (maxZoom > 1000) || (minZoom == maxZoom)) {
+				alert("Valeurs de zoom Min et Max trop faible ou trop élevée ou égales entre elles : utilisation des valeurs par défaut min = 25 et max = 300");
+				minZoom = 25;
+				maxZoom = 300;
+			}
+			// creates canvas without the zoom feature
+			else {
+				this.minZoom = minZoom;
+				this.maxZoom = maxZoom;
+				this.paper = Raphael(this.idPaper, this.width, this.height).initZoom();
+				this.processZoom(1);
+				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false});
+				this.viewport = zpd.gelem;
+				$('<div style="clear: both;">&nbsp;</div>').insertAfter('#' + this.idPaper);
+				// creates the zoom and pan feature
+				this.setZoomControls(this.paper, this.viewport);
+			}
 		}
 	};
 		
@@ -273,30 +282,35 @@ var KBGraphic = new function() {
 		this.elements.push(z);
 	};
 
+	//  Set Zoom Controls Function
+	// creates the zoom and pan feature
 	this.setZoomControls = function(paper, viewport) {
-		var idZoomer = this.idPaper + "_zoom";
+		var idZoomer = this.idPaper + "_zoom"; // CSS id of the div containing the zoom & pan controls
 		
-		$('<div id="' + idZoomer + '_pan_controls"></div>').insertAfter('#' + this.idPaper);
-		var panBox = Raphael(idZoomer + '_pan_controls', 100, 100);
-		$('#' + idZoomer + '_pan_controls').css('float', 'left');
-		$('#' + idZoomer + '_pan_controls').css('clear', 'right');
-		$('#' + idZoomer + '_pan_controls').css('margin-left', '20px');
-		$('#' + idZoomer + '_pan_controls').css('margin-top', '20px');
-		var panArrows = new Array();
+		// Pan Controls
+		$('<div id="' + idZoomer + '_pan_controls"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
+		var panBox = Raphael(idZoomer + '_pan_controls', 100, 100); // draws the controls  canvas
+		$('#' + idZoomer + '_pan_controls').css('float', 'left');		//
+		$('#' + idZoomer + '_pan_controls').css('clear', 'right');		// CSS for the div
+		$('#' + idZoomer + '_pan_controls').css('margin-left', '20px'); //  with pan controls
+		$('#' + idZoomer + '_pan_controls').css('margin-top', '20px');  //
+		var panArrows = new Array(); // list of controls
 		panArrows.push(
-			panBox.panControls.arrow(50, 50, 50, 15, 6, '#A2A2A2', true)[1],
-			panBox.panControls.arrow(50, 50, 50, 85, 6, '#A2A2A2', true)[1],
-			panBox.panControls.arrow(50, 50, 15, 50, 6, '#A2A2A2', true)[1],
-			panBox.panControls.arrow(50, 50, 85, 50, 6, '#A2A2A2', true)[1],
-			panBox.panControls.arrow(30, 30, 29, 29, 6, '#A2A2A2', false),
-			panBox.panControls.arrow(70, 30, 71, 29, 6, '#A2A2A2', false),
-			panBox.panControls.arrow(30, 70, 29, 71, 6, '#A2A2A2', false),
-			panBox.panControls.arrow(70, 70, 71, 71, 6, '#A2A2A2', false)
+			panBox.panControls.arrow(50, 50, 50, 15, 6, '#A2A2A2', true)[1], // upArrow
+			panBox.panControls.arrow(50, 50, 50, 85, 6, '#A2A2A2', true)[1], // downArrow
+			panBox.panControls.arrow(50, 50, 15, 50, 6, '#A2A2A2', true)[1], // leftArrow
+			panBox.panControls.arrow(50, 50, 85, 50, 6, '#A2A2A2', true)[1], // rightArrow
+			panBox.panControls.arrow(30, 30, 29, 29, 6, '#A2A2A2', false),   // upLeftArrow
+			panBox.panControls.arrow(70, 30, 71, 29, 6, '#A2A2A2', false),   // upRightArrow
+			panBox.panControls.arrow(30, 70, 29, 71, 6, '#A2A2A2', false),   // downLeftArrow
+			panBox.panControls.arrow(70, 70, 71, 71, 6, '#A2A2A2', false)    // downRightArrow
 		);
+		// draws a circle as a "background" decorator for the pan controls
 		panBox.circle(50, 50, 45).attr({
 			"stroke": "none",
 			"fill": "r#FFFFFF-#B9DDC0"
 		}).toBack();
+		// enables the "hover" feature
 		for(var i = 0; i < panArrows.length; i++) {
 			panArrows[i].mouseover(function() {
 				this.attr({

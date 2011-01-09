@@ -70,49 +70,47 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 	}
 };
 
-Raphael.fn.panControls = {
-	arrow: function (x1, y1, x2, y2, size, color, branch) {
-	    var angle = Math.atan2(x1-x2,y2-y1);
-	    angle = (angle / (2 * Math.PI)) * 360;
-	    var arrowPath = this.path("M" + x2 + " " + y2 + " L" + (x2 - size) + " " + (y2 - size) + " L" + (x2 - size) + " " + (y2 + size) + " L" + x2 + " " + y2 );
-		arrowPath.attr({
-			"fill": color,
-			"stroke": color,
-		});
-		arrowPath.rotate((90+angle), x2, y2);
-		if(branch == true) {
-			var a = (y2 - y1) / (x2 - x1);
-			if((a == 'Infinity') || (a == '-Infinity')) a = 0;
-			var b = y1 - (a * x1);
-			var x3 = (-(-2*x2-2*a*y2) + Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
-			if(((x3 < x2) && (x3 < x1)) || ((x3 > x2) && (x3 > x1))) {
-				x3 = (-(-2*x2-2*a*y2) - Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
-			}
-			var y3 = a * x3 + b;
-			if(x1 == x2) {
-				x3 = x1;
-				if(y1 < y2) {
-					y3 = y2 - size;
-				}
-				else {
-					y3 = y2 + size;
-				}
-			}
-			if(y1 == y2) {
-				y3 = y1;
-				if(x1 < x2) {
-					x3 = x2 - size;
-				}
-				else {
-					x3 = x2 + size;
-				}
-			}
-		    var linePath = this.path("M" + x1 + " " + y1 + " L" + x3 + " " + y3).attr("stroke", color).attr("stroke-width", size / 3);
-		    return [linePath,arrowPath];
+Raphael.fn.arrow = function (x1, y1, x2, y2, size, color, branch) {
+	var angle = Math.atan2(x1-x2,y2-y1);
+	angle = (angle / (2 * Math.PI)) * 360;
+	var arrowPath = this.path("M" + x2 + " " + y2 + " L" + (x2 - size) + " " + (y2 - size) + " L" + (x2 - size) + " " + (y2 + size) + " L" + x2 + " " + y2 );
+	arrowPath.attr({
+		"fill": color,
+		"stroke": color,
+	});
+	arrowPath.rotate((90+angle), x2, y2);
+	if(branch == true) {
+		var a = (y2 - y1) / (x2 - x1);
+		if((a == 'Infinity') || (a == '-Infinity')) a = 0;
+		var b = y1 - (a * x1);
+		var x3 = (-(-2*x2-2*a*y2) + Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
+		if(((x3 < x2) && (x3 < x1)) || ((x3 > x2) && (x3 > x1))) {
+			x3 = (-(-2*x2-2*a*y2) - Math.sqrt(Math.pow(-2*x2-2*a*y2, 2) - 4*(1 + Math.pow(a,2))*(x2+2*a*b+b-2*b*y2+y2))) / (2*(1 + Math.pow(a,2)));
 		}
-		else {
-			return arrowPath;
+		var y3 = a * x3 + b;
+		if(x1 == x2) {
+			x3 = x1;
+			if(y1 < y2) {
+				y3 = y2 - size;
+			}
+			else {
+				y3 = y2 + size;
+			}
 		}
+		if(y1 == y2) {
+			y3 = y1;
+			if(x1 < x2) {
+				x3 = x2 - size;
+			}
+			else {
+				x3 = x2 + size;
+			}
+		}
+		var linePath = this.path("M" + x1 + " " + y1 + " L" + x3 + " " + y3).attr("stroke", color).attr("stroke-width", size / 3);
+		return [linePath,arrowPath];
+	}
+	else {
+		return arrowPath;
 	}
 }
 
@@ -187,7 +185,7 @@ var KBGraphic = new function() {
 	this.height; // canvas height
 	this.idPaper; // CSS id of the div containing the graphical elements
 	this.elements; // list of elements the canvas contains
-	this.zoom; // zoom flag
+	this.panBoxControls; // list of pan controls
 	this.zoomValue; // zoom current value
 	this.minZoom; // minimum value of zoom
 	this.maxZoom; // maximum value of zoom
@@ -207,7 +205,6 @@ var KBGraphic = new function() {
 		this.elements = new Array();
 		// if zoom is not enabled
 		if(enableZoom == false) {
-			this.zoom = false;
 			this.paper = Raphael(this.idPaper, this.width, this.height); // creates canvas without the zoom feature
 		}
 		else {
@@ -229,21 +226,22 @@ var KBGraphic = new function() {
 				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false}); // enables intern pan feature				
 				this.minZoom = minZoom;
 				this.maxZoom = maxZoom;
-				this.zoomValue = 200; // current zoom value set to 100%
 				this.viewport = zpd.gelem; // sets the viewport
+				// drawing test
+				this.draw();
+				this.processZoom(200); // sets the zoom to the current value
 				//defines the default viewport transform matrix
 				this.matrix = new Array();
+				this.panBoxControls = new Array();
 				this.updateMatrix(0, 1, "set");
 				this.updateMatrix(1, 0, "set");
 				this.updateMatrix(2, 0, "set");
 				this.updateMatrix(3, 1, "set");
 				this.updateMatrix(4, 0, "set");
 				this.updateMatrix(5, 0, "set");
-				// drawing test
-				this.draw();
-				this.processZoom(this.zoomValue); // sets the zoom to the current value
 				// creates the zoom and pan feature
 				this.setZoomControls(this.paper, this.viewport, this.matrix);
+				this.checkOutPan();
 			}
 		}
 	};
@@ -294,334 +292,399 @@ var KBGraphic = new function() {
 		this.elements.push(z);
 	};
 
-	// Set Pan Controls Hover Function
-	// enables the "hover" feature
-	this.setPanControlsHover
+	// Check Out Pan Function
+	// checks whether pan is still possible and enables or disables the mouseover event
+	this.checkOutPan = function() {
+		if(this.matrix[4] == 0) {
+			$(this.panBoxControls[2][0].node).unbind();
+			$(this.panBoxControls[2][1].node).unbind();
+			this.panBoxControls[2][0].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+			this.panBoxControls[2][1].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+		}
+		if(this.matrix[4] > 0) {
+			$(this.panBoxControls[2][0].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[2][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[2][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[2][0].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[2][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[2][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			$(this.panBoxControls[2][1].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[2][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[2][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[2][1].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[2][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[2][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			this.panBoxControls[2][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+			this.panBoxControls[2][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+		}
+		if(this.matrix[4] < this.width * this.zoomValue) {
+			$(this.panBoxControls[3][0].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[3][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[3][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[3][0].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[3][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[3][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			$(this.panBoxControls[3][1].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[3][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[3][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[3][1].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[3][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[3][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			this.panBoxControls[3][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+			this.panBoxControls[3][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+		}
+		if(this.matrix[4] == this.width * this.zoomValue) {
+			$(this.panBoxControls[3][0].node).unbind();
+			$(this.panBoxControls[3][1].node).unbind();
+			this.panBoxControls[3][0].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+			this.panBoxControls[3][1].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+		}
+		if(this.matrix[5] == 0) {
+			$(this.panBoxControls[0][0].node).unbind();
+			$(this.panBoxControls[0][1].node).unbind();
+			this.panBoxControls[0][0].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+			this.panBoxControls[0][1].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+		}
+		if(this.matrix[5] > 0) {
+			$(this.panBoxControls[0][0].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[0][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[0][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[0][0].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[0][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[0][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			$(this.panBoxControls[0][1].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[0][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[0][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[0][1].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[0][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[0][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			this.panBoxControls[0][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+			this.panBoxControls[0][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+		}
+		if(this.matrix[5] < this.width * this.zoomValue) {
+			$(this.panBoxControls[1][0].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[1][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[1][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[1][0].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[1][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[1][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			$(this.panBoxControls[1][1].node).bind('mouseover', function() {
+				KBGraphic.panBoxControls[1][0].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+				KBGraphic.panBoxControls[1][1].attr({
+					"fill": "#25963A",
+					"stroke": "#25963A",
+					"cursor": "pointer"
+				});
+			});
+			$(this.panBoxControls[1][1].node).bind('mouseout', function() {
+				KBGraphic.panBoxControls[1][0].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+				KBGraphic.panBoxControls[1][1].attr({
+					"fill": "#A2A2A2",
+					"stroke": "#A2A2A2",
+					"cursor": "default"
+				});
+			});
+			this.panBoxControls[1][0].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+			this.panBoxControls[1][1].attr({
+				"fill": "#A2A2A2",
+				"stroke": "#A2A2A2",
+				"cursor": "pointer"
+			});
+		}
+		if(this.matrix[5] == this.width * this.zoomValue) {
+			$(this.panBoxControls[1][0].node).unbind();
+			$(this.panBoxControls[1][1].node).unbind();
+			this.panBoxControls[1][0].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+			this.panBoxControls[1][1].attr({
+				"fill": "#CCCCCC",
+				"stroke": "#CCCCCC",
+				"cursor": "no-drop"
+			});
+		}
+	}
 	
 	//  Set Zoom Controls Function
 	// creates the zoom and pan feature
-	this.setZoomControls = function(paper, viewport, matrix) {	
+	this.setZoomControls = function(paper, viewport, matrix) {
+		// Control Box
+		var idControlBox = this.idPaper + '_controls';
+		$('<div id="' + idControlBox + '"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
+		$('#' + idControlBox).css('float', 'left');		  //
+		$('#' + idControlBox).css('clear', 'right');	  // CSS for the div
+		$('#' + idControlBox).css('margin-left', '20px'); //  with pan controls
+		$('#' + idControlBox).css('margin-top', '20px');  //
+		
 		// Pan Controls
 		var idPanControls = this.idPaper + '_pan_controls';
-		$('<div id="' + idPanControls + '"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
+		$('<div id="' + idPanControls + '"></div>').appendTo('#' + idControlBox); // adds the div with pan controls
 		var panBox = Raphael(idPanControls, 100, 100); // draws the controls  canvas
-		$('#' + idPanControls).css('float', 'left');		//
-		$('#' + idPanControls).css('clear', 'right');		// CSS for the div
-		$('#' + idPanControls).css('margin-left', '20px'); //  with pan controls
-		$('#' + idPanControls).css('margin-top', '20px');  //
-		var panArrows = new Array(); // list of controls
-		panArrows.push(
-			panBox.panControls.arrow(50, 50, 50, 15, 8, '#A2A2A2', true),    // upArrow
-			panBox.panControls.arrow(50, 50, 50, 85, 8, '#A2A2A2', true),    // downArrow
-			panBox.panControls.arrow(50, 50, 15, 50, 8, '#A2A2A2', true),    // leftArrow
-			panBox.panControls.arrow(50, 50, 85, 50, 8, '#A2A2A2', true),    // rightArrow
-			panBox.panControls.arrow(30, 30, 29, 29, 8, '#A2A2A2', false),   // upLeftArrow
-			panBox.panControls.arrow(70, 30, 71, 29, 8, '#A2A2A2', false),   // upRightArrow
-			panBox.panControls.arrow(30, 70, 29, 71, 8, '#A2A2A2', false),   // downLeftArrow
-			panBox.panControls.arrow(70, 70, 71, 71, 8, '#A2A2A2', false)    // downRightArrow
+		this.panBoxControls.push(
+			panBox.arrow(50, 50, 50, 15, 9, '#A2A2A2', true),    // upArrow
+			panBox.arrow(50, 50, 50, 85, 9, '#A2A2A2', true),    // downArrow
+			panBox.arrow(50, 50, 15, 50, 9, '#A2A2A2', true),    // leftArrow
+			panBox.arrow(50, 50, 85, 50, 9, '#A2A2A2', true)     // rightArrow
 		);
 		// draws a circle as a "background" decorator for the pan controls
 		panBox.circle(50, 50, 45).attr({
 			"stroke": "none",
 			"fill": "r#FFFFFF-#B9DDC0"
 		}).toBack();
-		// enables the "hover" feature
-		panArrows[0][0].mouseover(function() {
-			panArrows[0][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[0][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[0][0].mouseout(function() {
-			panArrows[0][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[0][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[0][1].mouseover(function() {
-			panArrows[0][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[0][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[0][1].mouseout(function() {
-			panArrows[0][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[0][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[1][0].mouseover(function() {
-			panArrows[1][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[1][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[1][0].mouseout(function() {
-			panArrows[1][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[1][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[1][1].mouseover(function() {
-			panArrows[1][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[1][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[1][1].mouseout(function() {
-			panArrows[1][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[1][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[2][0].mouseover(function() {
-			panArrows[2][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[2][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[2][0].mouseout(function() {
-			panArrows[2][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[2][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[2][1].mouseover(function() {
-			panArrows[2][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[2][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[2][1].mouseout(function() {
-			panArrows[2][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[2][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[3][0].mouseover(function() {
-			panArrows[3][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[3][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[3][0].mouseout(function() {
-			panArrows[3][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[3][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[3][1].mouseover(function() {
-			panArrows[3][0].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-			panArrows[3][1].attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[3][1].mouseout(function() {
-			panArrows[3][0].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-			panArrows[3][1].attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[4].mouseover(function() {
-			this.attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[4].mouseout(function() {
-			this.attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[5].mouseover(function() {
-			this.attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[5].mouseout(function() {
-			this.attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[6].mouseover(function() {
-			this.attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[6].mouseout(function() {
-			this.attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		panArrows[7].mouseover(function() {
-			this.attr({
-				"fill": "#25963A",
-				"stroke": "#25963A",
-				"cursor": "pointer"
-			});
-		});
-		panArrows[7].mouseout(function() {
-			this.attr({
-				"fill": "#A2A2A2",
-				"stroke": "#A2A2A2",
-				"cursor": "default"
-			});
-		});
-		
-		/* pan feature functions
-		function moveUp(){
-			this.updateMatrix(5, 1, "-");
-			this.processMatrix();
-		}
-		function moveDown(){
-			this.updateMatrix(5, 1, "+");
-			this.processMatrix();
-		}
-		function moveLeft(){
-			this.updateMatrix(4, 1, "-");
-			this.processMatrix();
-		}
-		function moveRight(){
-			this.updateMatrix(4, 1, "+");
-			this.processMatrix();
-		}*/
 		// enables pan feature on click event
 		var timeout;
-		panArrows[0][0].mousedown(function() {
+		this.panBoxControls[0][0].mousedown(function() {
 			timeout = setInterval(function(){
 		        KBGraphic.updateMatrix(5, 1, "-");
 				KBGraphic.processMatrix();
 		    }, 5);
 		});
-		panArrows[0][1].mousedown(function() {
+		this.panBoxControls[0][1].mousedown(function() {
 			timeout = setInterval(function(){
 		        KBGraphic.updateMatrix(5, 1, "-");
 				KBGraphic.processMatrix();
 		    }, 5);
 		});
-		panArrows[1][0].mousedown(function() {
+		this.panBoxControls[1][0].mousedown(function() {
 			timeout = setInterval(function(){
 		        KBGraphic.updateMatrix(5, 1, "+");
 				KBGraphic.processMatrix();
 		    }, 5);
 		});
-		panArrows[1][1].mousedown(function() {
+		this.panBoxControls[1][1].mousedown(function() {
 			timeout = setInterval(function(){
 		        KBGraphic.updateMatrix(5, 1, "+");
 				KBGraphic.processMatrix();
 		    }, 5);
 		});
+		this.panBoxControls[2][0].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(4, 1, "-");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		this.panBoxControls[2][1].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(4, 1, "-");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		this.panBoxControls[3][0].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(4, 1, "+");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		this.panBoxControls[3][1].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(4, 1, "+");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		// stops the handler function when click is stopped
 		$(document).mouseup(function(){
 		    clearInterval(timeout);
 		    return false;
 		});
+		
+		// Pan Controls
+		var idZoomControls = this.idPaper + '_zoom_controls';
+		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
+		$('<div id="' + idZoomControls + '"></div>').appendTo('#' + idControlBox); // adds the div with zoom controls
+		$('#' + idZoomControls).css('margin-top', '30px');
+		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
+		$('<ul id="' + idZoomControls + '"></ul>').appendTo('#' + idControlBox); // adds the ul for list of zoom controls
+		//$('<span></span>').addClass('ui-icon ui-icon-circle-plus').appendTo('#' + idZoomControls);
+		//$('<span>Zoom</span>').attr('id', 'zoom-label').appendTo('#' + idZoomControls);
+		//$('<span></span>').addClass('ui-icon ui-icon-circle-minus').appendTo('#' + idZoomControls);
 		
 		/*$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
 		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
@@ -721,10 +784,7 @@ var KBGraphic = new function() {
 		if(index == 4) {
 			switch(mode) {
 				case "+":
-					if(this.matrix[4] + value <= this.width * this.zoomValue) {
-						this.matrix[4] += value;
-						//this.checkOutPan()
-					}
+					if(this.matrix[4] + value <= this.width * this.zoomValue) this.matrix[4] += value;
 					else this.matrix[4] = this.width * this.zoomValue;
 					break;
 				case "-":
@@ -753,7 +813,7 @@ var KBGraphic = new function() {
 			}
 			return true;
 		}
-		this.matrix[index] = value
+		this.matrix[index] = value;
 	}
 	
 	this.processMatrix = function() {
@@ -761,5 +821,6 @@ var KBGraphic = new function() {
 			'transform', 
 			'matrix(' + this.matrix[0] + ', ' + this.matrix[1] + ', ' + this.matrix[2] + ', ' + this.matrix[3] + ', ' + this.matrix[4] + ', ' + this.matrix[5] + ')'
 		);
+		this.checkOutPan();
 	}
 };

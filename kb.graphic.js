@@ -1,17 +1,16 @@
-////////////////////////////////////////////////////////////////////////////////
-//                                                                            //
-//                                                                            //
-//    KBLibGraphic                                                            //
-//    Author : Ludovic LEGENDART                                              //
-//    Version : 1.0                                                           //
-//    Date : 2011                                                             //
-//    Project : KBBox                                                         //
-//    Description : Librairie graphique permettant la génération de visuel    //
-//                  pour les parcours clients créés à partir de la KBBox.     //
-//                                                                            //
-//    Dépendances : jQuery / jQuery-UI / RaphaelJS / Basic JavaScript         //
-//                                                                            //
-//                                                                            //
+//
+//                                                                            							
+//    KBLibGraphic                                                            						
+//    Author : Ludovic LEGENDART  
+//    Version : 1.0        
+//    Date : 2011   
+//    Project : KBBox
+//    Description : Librairie graphique permettant la génération de visuel  
+//                  pour les parcours clients créés à partir de la KBBox.   
+//
+//    Dépendances : jQuery / jQuery-UI / RaphaelJS / Basic JavaScript   
+//                                                                      
+//                                                                      
 ////////////////////////////////////////////////////////////////////////////////
 
 Raphael.fn.connection = function (obj1, obj2, line, bg) {
@@ -189,7 +188,7 @@ var KBGraphic = new function() {
 	this.idPaper; // CSS id of the div containing the graphical elements
 	this.elements; // list of elements the canvas contains
 	this.zoom; // zoom flag
-	this.zoomValue; // zoom flag
+	this.zoomValue; // zoom current value
 	this.minZoom; // minimum value of zoom
 	this.maxZoom; // maximum value of zoom
 	
@@ -198,7 +197,7 @@ var KBGraphic = new function() {
 	this.init = function(id, w, h, enableZoom, minZoom, maxZoom) {
 		this.height = h;
 		this.width = w;
-		this.idPaper = id + "_graph"; // CSS id of the div containing the canvas
+		this.idPaper = id + '_graph'; // CSS id of the div containing the canvas
 		$('<div id="' + this.idPaper + '"></div>').appendTo('#' + id); // adds the div where the canvas will be displayed
 		$('#' + this.idPaper).css('float', 'left');				  //
 		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid'); //  CSS for the div
@@ -230,8 +229,7 @@ var KBGraphic = new function() {
 				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false}); // enables intern pan feature				
 				this.minZoom = minZoom;
 				this.maxZoom = maxZoom;
-				this.zoomValue = 1; // current zoom value set to 100%
-				this.processZoom(this.zoomValue); // sets the zoom to the current value
+				this.zoomValue = 200; // current zoom value set to 100%
 				this.viewport = zpd.gelem; // sets the viewport
 				//defines the default viewport transform matrix
 				this.matrix = new Array();
@@ -243,6 +241,7 @@ var KBGraphic = new function() {
 				this.updateMatrix(5, 0, "set");
 				// drawing test
 				this.draw();
+				this.processZoom(this.zoomValue); // sets the zoom to the current value
 				// creates the zoom and pan feature
 				this.setZoomControls(this.paper, this.viewport, this.matrix);
 			}
@@ -295,6 +294,10 @@ var KBGraphic = new function() {
 		this.elements.push(z);
 	};
 
+	// Set Pan Controls Hover Function
+	// enables the "hover" feature
+	this.setPanControlsHover
+	
 	//  Set Zoom Controls Function
 	// creates the zoom and pan feature
 	this.setZoomControls = function(paper, viewport, matrix) {	
@@ -571,7 +574,8 @@ var KBGraphic = new function() {
 				"cursor": "default"
 			});
 		});
-		// pan feature functions
+		
+		/* pan feature functions
 		function moveUp(){
 			this.updateMatrix(5, 1, "-");
 			this.processMatrix();
@@ -587,7 +591,37 @@ var KBGraphic = new function() {
 		function moveRight(){
 			this.updateMatrix(4, 1, "+");
 			this.processMatrix();
-		}
+		}*/
+		// enables pan feature on click event
+		var timeout;
+		panArrows[0][0].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(5, 1, "-");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		panArrows[0][1].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(5, 1, "-");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		panArrows[1][0].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(5, 1, "+");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		panArrows[1][1].mousedown(function() {
+			timeout = setInterval(function(){
+		        KBGraphic.updateMatrix(5, 1, "+");
+				KBGraphic.processMatrix();
+		    }, 5);
+		});
+		$(document).mouseup(function(){
+		    clearInterval(timeout);
+		    return false;
+		});
 		
 		/*$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
 		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
@@ -684,17 +718,42 @@ var KBGraphic = new function() {
 	}
 	
 	this.updateMatrix = function(index, value, mode) {
-		switch(mode) {
-			case "+":
-				this.matrix[index] += value;
-				break;
-			case "-":
-				this.matrix[index] -= value;
-				break;
-			case "set":
-				this.matrix[index] = value;
-				break;
+		if(index == 4) {
+			switch(mode) {
+				case "+":
+					if(this.matrix[4] + value <= this.width * this.zoomValue) {
+						this.matrix[4] += value;
+						//this.checkOutPan()
+					}
+					else this.matrix[4] = this.width * this.zoomValue;
+					break;
+				case "-":
+					if(this.matrix[4] - value >= 0) this.matrix[4] -= value;
+					else this.matrix[4] = 0;
+					break;
+				case "set":
+					if((value >= 0) && (value <= this.width * this.zoomValue)) this.matrix[4] = value;
+					break;
+			}
+			return true;
 		}
+		if(index == 5) {
+			switch(mode) {
+				case "+":
+					if(this.matrix[5] + value <= this.height * this.zoomValue) this.matrix[5] += value;
+					else this.matrix[5] = this.height * this.zoomValue;
+					break;
+				case "-":
+					if(this.matrix[5] - value >= 0) this.matrix[5] -= value;
+					else this.matrix[5] = 0;
+					break;
+				case "set":
+					if((value >= 0) && (value <= this.height * this.zoomValue)) this.matrix[5] = value;
+					break;
+			}
+			return true;
+		}
+		this.matrix[index] = value
 	}
 	
 	this.processMatrix = function() {

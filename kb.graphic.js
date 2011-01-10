@@ -127,6 +127,8 @@ function KBElement(element) {
 		var start = function() {
 			this.ox = this.attr("cx");
 			this.oy = this.attr("cy");
+			this.w = this.attr("width");
+			this.h = this.attr("height");
 			if(this.attr("opacity")) {
 				this.oop = this.attr("opacity");
 			}
@@ -138,10 +140,18 @@ function KBElement(element) {
 				links[i].line.attr({"stroke-width": 2});
 			}
 		},
-		move = function(dx, dy) {			
+		move = function(dx, dy) {	
+			var nx = this.ox + dx - this.w;
+			var ny = this.oy + dy - this.h;
+			
+			if(nx < 0) nx = 0;
+			if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue;
+			if(ny < 0) ny = 0;
+			if(ny > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue;
+			
 			this.setAttr({
-				cx: this.ox + dx, 
-				cy: this.oy + dy
+				cx: nx, 
+				cy: ny
 			});
 			
 			for (var i = links.length; i--;) {
@@ -214,34 +224,33 @@ var KBGraphic = new function() {
 				minZoom = maxZoom;
 				maxZoom = invertZoom;
 			}
-			// checks the values, if there doesn't match, default values are used
-			if((minZoom < 5) || (minZoom > 100) || (maxZoom < 100) || (maxZoom > 1000) || (minZoom == maxZoom)) {
-				alert("Valeurs de zoom Min et Max trop faible ou trop élevée ou égales entre elles : utilisation des valeurs par défaut min = 25 et max = 300");
-				minZoom = 25;
-				maxZoom = 300;
-			}
 			// creates canvas without the zoom feature
 			else {
 				this.paper = Raphael(this.idPaper, this.width, this.height).initZoom(); // draws the main canvas and enables intern zoom feature	
 				var zpd = new RaphaelZPD(this.paper, {zoom: false, pan: false, drag: false}); // enables intern pan feature				
-				this.minZoom = minZoom;
-				this.maxZoom = maxZoom;
+				this.minZoom = minZoom / 100;
+				this.maxZoom = maxZoom / 100;
 				this.viewport = zpd.gelem; // sets the viewport
-				// drawing test
-				this.draw();
-				this.processZoom(200); // sets the zoom to the current value
-				//defines the default viewport transform matrix
-				this.matrix = new Array();
-				this.panBoxControls = new Array();
-				this.updateMatrix(0, 1, "set");
-				this.updateMatrix(1, 0, "set");
-				this.updateMatrix(2, 0, "set");
-				this.updateMatrix(3, 1, "set");
-				this.updateMatrix(4, 0, "set");
-				this.updateMatrix(5, 0, "set");
+				this.draw(); // drawing test
+				this.matrix = new Array(1, 0, 0, 1, 0, 0); //defines the default viewport transform matrix
+				this.panBoxControls = new Array(); // list of pan controls
+				this.scaleRadar = 0.208 // scale for radar
 				// creates the zoom and pan feature
 				this.setZoomControls(this.paper, this.viewport, this.matrix);
-				this.checkOutPan();
+				this.updateZoom(100, "set"); // sets the zoom to the current value
+				this.processZoom(); // does the zoom
+				for(var i = 0; i < this.panBoxControls.length; i++) {
+					this.panBoxControls[i][0].attr({
+						"fill": "#CCCCCC",
+						"stroke": "#CCCCCC",
+						"cursor": "no-drop"
+					});
+					this.panBoxControls[i][1].attr({
+						"fill": "#CCCCCC",
+						"stroke": "#CCCCCC",
+						"cursor": "no-drop"
+					});
+				}
 			}
 		}
 	};
@@ -250,33 +259,33 @@ var KBGraphic = new function() {
 		var stage1 = new Array();
 		var stage2 = new Array();
 		
-		for(var j = 0; j < 15; j++) {
+		for(var j = 1; j < 16; j++) {
 			var x = new KBElement(this.paper.circle(35*j, 20*j, 10).initZoom());
 			x.raphElement.setAttr({
-						fill: '270-#FFFFFF-#000000',
-						stroke: "none",
-						cursor: "pointer"
+				fill: '270-#FFFFFF-#000000',
+				stroke: "none",
+				cursor: "pointer"
 			});
 			x.init();
 			stage1.push(x);
 		}
 		
-		for(var h = 0; h < 3; h++) {
+		for(var h = 1; h < 4; h++) {
 			var y = new KBElement(this.paper.circle(50*h, 100*h, 20).initZoom());
 			y.raphElement.setAttr({
-						fill: '270-#A60000-#000000',
-						stroke: "none",
-						cursor: "pointer"
+				fill: '270-#A60000-#000000',
+				stroke: "none",
+				cursor: "pointer"
 			});
 			y.init();
 			stage2.push(y);
-			for(var k = 5*h; k < 5*(h+1); k++) {
+			for(var k = 5 * (h - 1); k < 5 * h; k++) {
 				y.linkedElements.push(stage1[k]);
 			}
 			y.drawLink();
 		}
 		
-		var z = new KBElement(this.paper.circle(600, 200, 30).initZoom());
+		var z = new KBElement(this.paper.circle(100, 500, 30).initZoom());
 		z.raphElement.setAttr({
 			fill: '270-#1111FF-#000000',
 			stroke: "none",
@@ -291,9 +300,25 @@ var KBGraphic = new function() {
 		this.elements.concat(stage1, stage2);
 		this.elements.push(z);
 	};
-
+	
+	// Check Out Radar Function
+	// checks radar and updates it depending on pan & zoom
+	this.checkOutRadar = function() {
+		var idRadarTarget = $('#' + this.idPaper + '_radar_target');
+		if(this.zoomValue > 1) {
+			idRadarTarget.css('display', 'block');
+			idRadarTarget.css('width', (parseInt(idRadarTarget.attr('targetWidth')) / this.zoomValue) + 'px');
+			idRadarTarget.css('height', (parseInt(idRadarTarget.attr('targetHeight')) / this.zoomValue) + 'px');
+			idRadarTarget.css('left', this.matrix[4] * this.scaleRadar / this.zoomValue);
+			idRadarTarget.css('top', this.matrix[5] * this.scaleRadar / this.zoomValue);
+		}
+		else {
+			idRadarTarget.css('display', 'none');
+		}
+	}
+	
 	// Check Out Pan Function
-	// checks whether pan is still possible and enables or disables the mouseover event
+	// checks whether pan is still possible and enables or disables the mouseover event on pan controls
 	this.checkOutPan = function() {
 		if(this.matrix[4] == 0) {
 			$(this.panBoxControls[2][0].node).unbind();
@@ -369,7 +394,7 @@ var KBGraphic = new function() {
 				"cursor": "pointer"
 			});
 		}
-		if(this.matrix[4] < this.width * this.zoomValue) {
+		if(this.matrix[4] < this.width * (this.zoomValue - 1)) {
 			$(this.panBoxControls[3][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[3][0].attr({
 					"fill": "#25963A",
@@ -429,7 +454,7 @@ var KBGraphic = new function() {
 				"cursor": "pointer"
 			});
 		}
-		if(this.matrix[4] == this.width * this.zoomValue) {
+		if(this.matrix[4] == this.width * (this.zoomValue - 1)) {
 			$(this.panBoxControls[3][0].node).unbind();
 			$(this.panBoxControls[3][1].node).unbind();
 			this.panBoxControls[3][0].attr({
@@ -517,7 +542,7 @@ var KBGraphic = new function() {
 				"cursor": "pointer"
 			});
 		}
-		if(this.matrix[5] < this.width * this.zoomValue) {
+		if(this.matrix[5] < this.height * (this.zoomValue - 1)) {
 			$(this.panBoxControls[1][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[1][0].attr({
 					"fill": "#25963A",
@@ -577,7 +602,7 @@ var KBGraphic = new function() {
 				"cursor": "pointer"
 			});
 		}
-		if(this.matrix[5] == this.width * this.zoomValue) {
+		if(this.matrix[5] == this.height * (this.zoomValue - 1)) {
 			$(this.panBoxControls[1][0].node).unbind();
 			$(this.panBoxControls[1][1].node).unbind();
 			this.panBoxControls[1][0].attr({
@@ -590,6 +615,30 @@ var KBGraphic = new function() {
 				"stroke": "#CCCCCC",
 				"cursor": "no-drop"
 			});
+		}
+	}
+	
+	// Check Out Zoom Function
+	// checks whether zoom is still possible and enables or disables the mouseover event on zoom controls
+	this.checkOutZoom = function() {
+		$('.zoom-value').text(Math.round(this.zoomValue * 100));
+		if(this.zoomValue == this.minZoom) {
+			$('.zoom-minus').unbind('mouseover');
+			$('.zoom-minus').css('cursor', 'no-drop');			
+		}
+		if(this.zoomValue > this.minZoom) {
+			$('.zoom-minus').bind('mouseover', function() {
+				$(this).css('cursor', 'pointer');
+			});
+		}
+		if(this.zoomValue < this.maxZoom) {
+			$('.zoom-plus').bind('mouseover', function() {
+				$(this).css('cursor', 'pointer');
+			});
+		}
+		if(this.zoomValue == this.maxZoom) {
+			$('.zoom-plus').unbind('mouseover');
+			$('.zoom-plus').css('cursor', 'no-drop');			
 		}
 	}
 	
@@ -617,7 +666,7 @@ var KBGraphic = new function() {
 		// draws a circle as a "background" decorator for the pan controls
 		panBox.circle(50, 50, 45).attr({
 			"stroke": "none",
-			"fill": "r#FFFFFF-#B9DDC0"
+			"fill": "r#FFFFFF-#DDDDDD"
 		}).toBack();
 		// enables pan feature on click event
 		var timeout;
@@ -669,130 +718,98 @@ var KBGraphic = new function() {
 				KBGraphic.processMatrix();
 		    }, 5);
 		});
-		// stops the handler function when click is stopped
-		$(document).mouseup(function(){
-		    clearInterval(timeout);
-		    return false;
-		});
 		
-		// Pan Controls
+		// Zoom Controls
 		var idZoomControls = this.idPaper + '_zoom_controls';
 		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
 		$('<div id="' + idZoomControls + '"></div>').appendTo('#' + idControlBox); // adds the div with zoom controls
 		$('#' + idZoomControls).css('margin-top', '30px');
 		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
-		$('<ul id="' + idZoomControls + '"></ul>').appendTo('#' + idControlBox); // adds the ul for list of zoom controls
-		//$('<span></span>').addClass('ui-icon ui-icon-circle-plus').appendTo('#' + idZoomControls);
-		//$('<span>Zoom</span>').attr('id', 'zoom-label').appendTo('#' + idZoomControls);
-		//$('<span></span>').addClass('ui-icon ui-icon-circle-minus').appendTo('#' + idZoomControls);
+		// adds the ul for list of zoom controls
+		$('<ul id="' + idZoomControlsList + '" class="ui-widget ui-helper-clearfix">'
+			+ '<li class="zoom-buttons"><span class="zoom-minus"></span></li>'
+			+ '<li><p class="zoom-label">Zoom : <span class="zoom-value"></span>%</p></li>'
+			+ '<li class="zoom-buttons"><span class="zoom-plus"></span></li>'
+		+ '</ul>').appendTo('#' + idZoomControls);
+		$('#' + idZoomControlsList + ' li').css('list-style', 'none');
+		$('#' + idZoomControlsList + ' li').css('float', 'left');
+		$('.zoom-plus').addClass('ui-icon ui-icon-circle-plus');
+		$('.zoom-plus').bind('mousedown', function() {
+			KBGraphic.updateZoom(5, "+");
+			KBGraphic.processZoom();	
+		});
+		$('.zoom-minus').addClass('ui-icon ui-icon-circle-minus');
+		$('.zoom-minus').bind('mousedown', function() {
+			KBGraphic.updateZoom(5, "-");
+			KBGraphic.processZoom();
+		});
+		$('.zoom-label').css('margin-top', '4px');
+		$('.zoom-label').css('margin-bottom', '4px');
+		$('.zoom-value').css('font-weight', 'bold');
+		$('.zoom-value').text(this.zoomValue * 100);
+		$('.ui-icon').css('margin', '4px');
 		
-		/*$('<div id="' + idZoomer + '_hpan"></div>').insertAfter("#" + this.idPaper);
-		$('<div class="kb_visual_zoom"></div>').insertAfter(".kb_visual");
-		$('<div id="' + idZoomer + '"></div><p id="' + idZoomer + '_label">Zoom : <span id="' + idZoomer + '_value">100</span>%</p>').appendTo(".kb_visual_zoom");
-		$('<div id="' + idZoomer + '_value_selectors"><button value="50">50%</button><button value="100">100%</button><button value="150">150%</button><button value="200">200%</button><button value="250">250%</button></div>').insertAfter("#" + idZoomer + "_label");
-		$('<div id="' + idZoomer + '_mini"></div>').insertAfter("#" + idZoomer);
-		$('<div id="' + idZoomer + '_mini_active">&nbsp;</div>').appendTo("#" + idZoomer + "_mini");
-		$("#" + idZoomer).addClass("kb_visual_zoomer");
-		$("#" + idZoomer + "_label").addClass("kb_visual_zoomer_label");
-		$("#" + idZoomer + "_value").addClass("kb_visual_zoomer_value");
-		$("#" + idZoomer + "_value_selectors").addClass("kb_visual_zoomer_value_selectors");
-		$("#" + idZoomer + "_vpan").addClass("kb_visual_zoomer_vpan");
-		$("#" + idZoomer + "_hpan").addClass("kb_visual_zoomer_hpan");
-		$("#" + idZoomer + "_mini").addClass("kb_visual_zoomer_mini");
-		$("#" + idZoomer + "_mini_active").addClass("kb_visual_zoomer_mini_active");
-		var zoomSlider = $("#" + idZoomer).slider({
-			animate: true,
-			orientation: "vertical",
-			range: "min",
-			min: 5,
-			max: 350,
-			value: 100,
-			change: function(event, ui) {
-				$("#" + idZoomer + "_value").text(ui.value);
-				KBGraphic.zoom(ui.value);
-				if(ui.value > 100) {
-					$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
-					$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
-				}
-				else {
-					$("#" + idZoomer + "_mini_active").css("width", "200px");
-					$("#" + idZoomer + "_mini_active").css("height", "107px");
-				}
-			},
-			slide: function(event, ui) {
-				$("#" + idZoomer + "_value").text(ui.value);
-				KBGraphic.zoom(ui.value);
-				if(ui.value > 100) {
-					$("#" + idZoomer + "_mini_active").css("width", (200 - ((ui.value - 100) * 0.568)) + "px");
-					$("#" + idZoomer + "_mini_active").css("height", (107 - ((ui.value - 100) * 0.304)) + "px");
-				}
-				else {
-					$("#" + idZoomer + "_mini_active").css("width", "200px");
-					$("#" + idZoomer + "_mini_active").css("height", "107px");
-				}
-			}
+		// Mini Radar
+		var idRadar = this.idPaper + '_radar';
+		var idRadarTarget = idRadar + '_target';
+		var targetWidth = this.width * this.scaleRadar;
+		var targetHeight = this.height * this.scaleRadar;
+		$('<div id="' + idRadar + '"></div>').appendTo('#' + idControlBox); // adds the div with radar
+		$('#' + idRadar).css('margin-top', '30px');
+		$('#' + idRadar).css('border', '1px #A2A2A2 dashed');
+		$('#' + idRadar).css('width', targetWidth + 'px');
+		$('#' + idRadar).css('height', targetHeight + 'px');
+		$('<div id="' + idRadarTarget + '">&nbsp;</div>').appendTo('#' + idRadar); // adds the div with radar
+		$('#' + idRadarTarget).css('border', '1px #A60000 solid');
+		$('#' + idRadarTarget).css('width', targetWidth + 'px');
+		$('#' + idRadarTarget).css('height', targetHeight + 'px');
+		$('#' + idRadarTarget).attr('targetHeight', targetHeight);
+		$('#' + idRadarTarget).attr('targetWidth', targetWidth);
+		$('#' + idRadarTarget).css('position', 'relative');
+		$('#' + idRadarTarget).css('left', '0');
+		$('#' + idRadarTarget).css('right', '0');
+
+		// stops the handler function when click is stopped
+		$(document).mouseup(function(){
+		    clearInterval(timeout);
+		    return false;
 		});
-		$("#" + idZoomer + "_vpan").slider({
-			animate: true,
-			orientation: "vertical",
-			range: "max",
-			min: 0,
-			max: this.height,
-			value: this.height,
-			step: 1,
-			slide: function(event, ui) {
-				var matrix = canvas.gelem.getAttribute("transform");
-				if(!matrix) {
-					matrix = "matrix(1, 0, 0, 1, 0, " + KBGraphic.height + ")";
-				}
-				var reg = new RegExp("[(,]+","g");
-				var matrix_exploded = matrix.split(reg);
-				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", " + matrix_exploded[5] + ", "+ (ui.value - KBGraphic.height) + ")");
-				$("#" + idZoomer + "_mini_active").css("top", (- (ui.value - KBGraphic.height) * 0.1) + "px");
-			}
-		});
-		$("#" + idZoomer + "_hpan").slider({
-			animate: true,
-			range: "min",
-			min: 0,
-			max: this.width,
-			value: 0,
-			step: 1,
-			slide: function(event, ui) {
-				var matrix = canvas.gelem.getAttribute("transform");
-				if(!matrix) {
-					matrix = "matrix(1, 0, 0, 1, 0, 0)";
-				}
-				var reg = new RegExp("[(,]+","g");
-				var matrix_exploded = matrix.split(reg);
-				canvas.gelem.setAttribute("transform","matrix(" + matrix_exploded[1] + ", " + matrix_exploded[2] + ", " + matrix_exploded[3] + ", " + matrix_exploded[4] + ", -" + (ui.value) + ", " + matrix_exploded[6]);
-			}
-		});
-		$("#" + idZoomer + "_value_selectors button").each(function() {
-			$(this).click(function() {
-				zoomSlider.slider("value",$(this).attr("value"));
-			});
-		});*/
 	};
 	
-	this.processZoom = function(zoom) {
-		this.zoomValue = zoom / 100;
+	this.updateZoom = function(zoom, mode) {
+		zoom = zoom / 100;
+		switch(mode) {
+			case "+":
+				if(this.zoomValue + zoom <= this.maxZoom) this.zoomValue += zoom;
+				else this.zoomValue = this.maxZoom;
+				break;
+			case "-":
+				if(this.zoomValue - zoom  >= this.minZoom) this.zoomValue -= zoom;
+				else this.zoomValue = this.minZoom;
+				break;
+			case "set":
+				if((zoom >= this.minZoom) && (zoom <= this.maxZoom)) this.zoomValue = zoom;
+				break;
+		}
+	}
+	
+	this.processZoom = function() {
 		this.paper.setZoom(this.zoomValue);
+		this.checkOutZoom();
+		this.checkOutPan();
+		this.checkOutRadar();
 	}
 	
 	this.updateMatrix = function(index, value, mode) {
 		if(index == 4) {
 			switch(mode) {
 				case "+":
-					if(this.matrix[4] + value <= this.width * this.zoomValue) this.matrix[4] += value;
-					else this.matrix[4] = this.width * this.zoomValue;
+					if(this.matrix[4] + value <= this.width * (this.zoomValue - 1)) this.matrix[4] += value;
+					else this.matrix[4] = this.width * (this.zoomValue - 1);
 					break;
 				case "-":
 					if(this.matrix[4] - value >= 0) this.matrix[4] -= value;
 					else this.matrix[4] = 0;
-					break;
-				case "set":
-					if((value >= 0) && (value <= this.width * this.zoomValue)) this.matrix[4] = value;
 					break;
 			}
 			return true;
@@ -800,20 +817,16 @@ var KBGraphic = new function() {
 		if(index == 5) {
 			switch(mode) {
 				case "+":
-					if(this.matrix[5] + value <= this.height * this.zoomValue) this.matrix[5] += value;
-					else this.matrix[5] = this.height * this.zoomValue;
+					if(this.matrix[5] + value <= this.height * (this.zoomValue - 1)) this.matrix[5] += value;
+					else this.matrix[5] = this.height * (this.zoomValue - 1);
 					break;
 				case "-":
 					if(this.matrix[5] - value >= 0) this.matrix[5] -= value;
 					else this.matrix[5] = 0;
 					break;
-				case "set":
-					if((value >= 0) && (value <= this.height * this.zoomValue)) this.matrix[5] = value;
-					break;
 			}
 			return true;
 		}
-		this.matrix[index] = value;
 	}
 	
 	this.processMatrix = function() {
@@ -822,5 +835,6 @@ var KBGraphic = new function() {
 			'matrix(' + this.matrix[0] + ', ' + this.matrix[1] + ', ' + this.matrix[2] + ', ' + this.matrix[3] + ', ' + this.matrix[4] + ', ' + this.matrix[5] + ')'
 		);
 		this.checkOutPan();
+		this.checkOutRadar();
 	}
 };

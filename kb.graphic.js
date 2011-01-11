@@ -127,8 +127,7 @@ function KBElement(element) {
 		var start = function() {
 			this.ox = this.attr("cx");
 			this.oy = this.attr("cy");
-			this.w = this.attr("width");
-			this.h = this.attr("height");
+			this.r = this.attr("r");
 			if(this.attr("opacity")) {
 				this.oop = this.attr("opacity");
 			}
@@ -141,13 +140,13 @@ function KBElement(element) {
 			}
 		},
 		move = function(dx, dy) {	
-			var nx = this.ox + dx - this.w;
-			var ny = this.oy + dy - this.h;
+			var nx = this.ox + dx - this.r;
+			var ny = this.oy + dy - this.r;
 			
-			if(nx < 0) nx = 0;
-			if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue;
-			if(ny < 0) ny = 0;
-			if(ny > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue;
+			if(nx < 0) nx = this.r;
+			if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - this.r;
+			if(ny < 0) ny = this.r;
+			if(ny > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - this.r;
 			
 			this.setAttr({
 				cx: nx, 

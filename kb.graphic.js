@@ -116,72 +116,150 @@ Raphael.fn.arrow = function (x1, y1, x2, y2, size, color, branch) {
 	}
 }
 
-// draws an element as a file graphic representation
-Raphael.fn.file = function(maxx, maxy, fsize, type, data) {
-	var c;
-	var t;
-	var cInv;
-	
-	switch(type) {
-		case "step":
-			c = '270-#FFFFFF-#DCFFBD';
-			cInv = '270-#DCFFBD-#FFFFFF';
-			t = '#75D025';
-			break;
-		case "process":
-			c = '270-#FFFFFF-#FFECC1';
-			cInv = '270-#FFECC1-#FFFFFF';
-			t = '#FFC53C';
-			break;
-		case "act":
-			c = '270-#FFFFFF-#C5F0FF';
-			cInv = '270-#C5F0FF-#FFFFFF';
-			t = '#2EC7FF';
-			break;
-		case "task":
-			c = '270-#FFFFFF-#F4C7FF';
-			cInv = '270-#F4C7FF-#FFFFFF';
-			t = '#D942FF';
-			break;
+// PCElement Drawer
+Raphael.fn.pcElementDrawer = {
+	// draws an element as a file graphic representation
+	file: function(maxx, maxy, fsize, type, data) {
+		var c;
+		var t;
+		var cInv;
+		
+		switch(type) {
+			case "offer":
+				c = '270-#FFFFFF-#FFC2C2';
+				cInv = '270-#FFC2C2-#FFFFFF';
+				t = '#FF2323';
+				break;
+			case "step":
+				c = '270-#FFFFFF-#DCFFBD';
+				cInv = '270-#DCFFBD-#FFFFFF';
+				t = '#75D025';
+				break;
+			case "process":
+				c = '270-#FFFFFF-#FFECC1';
+				cInv = '270-#FFECC1-#FFFFFF';
+				t = '#FFC53C';
+				break;
+			case "act":
+				c = '270-#FFFFFF-#C5F0FF';
+				cInv = '270-#C5F0FF-#FFFFFF';
+				t = '#2EC7FF';
+				break;
+			case "task":
+				c = '270-#FFFFFF-#F4C7FF';
+				cInv = '270-#F4C7FF-#FFFFFF';
+				t = '#D942FF';
+				break;
+		}
+		
+		var x = Math.floor(Math.random() * maxx + 1);
+		var y = Math.floor(Math.random() * maxy + 1);
+		// Text
+		var text = this.text(x + 12, y, data[1]).attr({"font-size": fsize, "font-family": "Verdana", fill: t, "text-anchor": "start"});
+		var w = text.getBBox().width + 30;
+		var h = text.getBBox().height + 30;
+		var dx = 0;
+		var dy = 0;
+		if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
+		if((y + h + 5) > maxy) y = y - ((y + h + 5) - maxy);
+		text.translate(x + 12 - text.attr("x"), y + (h / 2) - text.attr("y"));
+		text.initZoom();
+		// Corner
+		var corner = this.path(
+			"M" + x + " " + (y + 12)
+			+ " L" + (x + 12) + " " + (y + 12)
+			+ " L" + (x + 12) + " " + y 
+			+ " L" + x + y + " Z"
+		).initZoom();
+		corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});
+		// Reflection
+		var reflect = this.rect(x, y + h, w, h / 4).initZoom();
+		reflect.setAttr({fill: cInv, stroke: "none", opacity: 0.1});
+		// MainBox
+		var mainBox = this.path(
+			"M" + (x + 12) + " " + y
+			+ " L" + (x + w) + " " + y
+			+ " L" + (x + w) + " " + (y + h)
+			+ " L" + x + " " + (y + h)
+			+ " L" + x + " " + (y + 12)
+			+ " L" + (x + 12) + " " + (y + 12)
+			+ " L" + (x + 12) + " " + y + " Z"
+		).initZoom();
+		mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "title": data[0], "cursor": "pointer", "title": data[0]});	
+		text.toFront();
+		return [mainBox, corner, text, reflect];
+	},
+
+	// draw an element as a ball representation
+	ball: function (maxx, maxy, fsize, type, data) {
+		var c;
+		var t;
+		var cInv;
+		var tooltip = $('#tooltip_ball');
+		if(!tooltip) {
+			$('<div id="tooltip_ball"></div>').insertAfter('#' + KBGraphic.idPaper);
+			tooltip = $('#tooltip_ball');
+		}
+		tooltip.hide();
+		
+		switch(type) {
+			case "offer":
+				c = 'r(.5,.9)#FFFFFF-#FF2323';
+				cInv = 'r#FF2323-#FFFFFF';
+				t = '#FF2323';
+				break;
+			case "step":
+				c = 'r(.5,.9)#FFFFFF-#75D025';
+				cInv = 'r#75D025-#FFFFFF';
+				t = '#75D025';
+				break;
+			case "process":
+				c = 'r(.5,.9)#FFFFFF-#FFC53C';
+				cInv = 'r#FFC53C-#FFFFFF';
+				t = '#FFC53C';
+				break;
+			case "act":
+				c = 'r(.5,.9)#FFFFFF-#2EC7FFF';
+				cInv = 'r#2EC7FFF-#FFFFFF';
+				t = '#2EC7FF';
+				break;
+			case "task":
+				c = 'r(.5,.9)#FFFFFF-#D942FF';
+				cInv = 'r#D942FF-#FFFFFF';
+				t = '#D942FF';
+				break;
+		}
+		
+		var x = Math.floor(Math.random() * maxx + 1);
+		var y = Math.floor(Math.random() * maxy + 1);
+		// Text
+		var text = this.text(x + 12, y, data[0]).attr({"font-size": fsize, "font-family": "Verdana", fill: t});
+		var w = text.getBBox().width + 30;
+		var h = text.getBBox().height + 30;
+		var dx = 0;
+		var dy = 0;
+		if(w >= h) r = w / 2;
+		else r = h / 2
+		if(x > maxx - r) x = maxx - r;
+		if(y > maxy - r) y = maxy - r;
+		text.translate(x  - text.attr("x"), y - text.attr("y"));
+		text.initZoom();
+		// MainEllispe
+		var mainEl = this.ellipse(x, y, r, r).initZoom();
+		mainEl.setAttr({fill: c, stroke: "none", opacity: 0.5});
+		// Light
+		var light = this.ellipse(x, y, r - r / 5, r - r / 20).initZoom();
+		light.setAttr({stroke: "none", fill: "r(.5,.1)#EEE-#EEE", opacity: 0});
+		// Reflection
+		var reflect = this.ellipse(x, y + r - r / 5, r, r / 2).initZoom();
+		reflect.setAttr({fill: cInv, stroke: "none", opacity: .4});
+		text.toFront();
+		reflect.toBack();
+		//addTip(light.node, data[1]);
+		//addTip(mainEl.node, data[1]);
+		return [mainEl, light, text, reflect];
 	}
-	
-	var x = Math.floor(Math.random() * maxx + 1);
-	var y = Math.floor(Math.random() * maxy + 1);
-	// Text
-	var text = this.text(x + 12, y, data[1]).attr({"font-size": fsize, "font-family": "Verdana", fill: t, "text-anchor": "start"});
-	var w = text.getBBox().width + 30;
-	var h = text.getBBox().height + 30;
-	var dx = 0;
-	var dy = 0;
-	if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
-	if((y + h + 5) > maxy) y = y - ((y + h + 5) - maxy);
-	text.translate(x + 12 - text.attr("x"), y + (h / 2) - text.attr("y"));
-	text.initZoom();
-	// Corner
-	var corner = this.path(
-		"M" + x + " " + (y + 12)
-		+ " L" + (x + 12) + " " + (y + 12)
-		+ " L" + (x + 12) + " " + y 
-		+ " L" + x + y + " Z"
-	).initZoom();
-	corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});
-	// Reflection
-	var reflect = this.rect(x, y + h, w, h / 4).initZoom();
-	reflect.setAttr({fill: cInv, stroke: "none", opacity: 0.1});
-	// MainBox
-	var mainBox = this.path(
-		"M" + (x + 12) + " " + y
-		+ " L" + (x + w) + " " + y
-		+ " L" + (x + w) + " " + (y + h)
-		+ " L" + x + " " + (y + h)
-		+ " L" + x + " " + (y + 12)
-		+ " L" + (x + 12) + " " + (y + 12)
-		+ " L" + (x + 12) + " " + y + " Z"
-	).initZoom();
-	mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});	
-	text.toFront();
-	return [mainBox, corner, text, reflect];
-} 
+}
 
 // Class KBElement
 function KBElement(type, representation, fzise, data) {
@@ -204,137 +282,120 @@ function KBElement(type, representation, fzise, data) {
 			case "file":
 				var x = Math.floor(Math.random() * (KBGraphic.width - 51) + 1);
 				var y = Math.floor(Math.random() * (KBGraphic.height - 51) + 1);
-				this.raphElement = this.canvas.file(KBGraphic.width - 51, KBGraphic.height - 51, fsize, type, data);
+				this.raphElement = this.canvas.pcElementDrawer.file(KBGraphic.width - 51, KBGraphic.height - 51, fsize, type, data);
 				break;
 			case "ball":
+				var x = Math.floor(Math.random() * (KBGraphic.width - 51) + 1);
+				var y = Math.floor(Math.random() * (KBGraphic.height - 51) + 1);
+				this.raphElement = this.canvas.pcElementDrawer.ball(KBGraphic.width - 51, KBGraphic.height - 51, fsize, type, data);
 				break;
 		}
 	};
 	
 	this.setSimpleDragAndDrop = function(links, elements) {
-		var start = function() {
-			for(var s = 0; s < elements.length; s++) {
-				switch (elements[s].type) {
-					case "path":
-						var path = elements[s].pathToR();
-						var dim = elements[s].pathDim(path);
-						elements[s].ox = path[0][1];
-						elements[s].oy = path[0][2];
-						elements[s].w = dim.width;
-						elements[s].h = dim.height;
-						break;
-					case "circle":
-						elements[s].ox = elements[s].attr("cx");
-						elements[s].oy = elements[s].attr("cy");
-						elements[s].r = elements[s].attr("r");
-						break;
-					default:
-						elements[s].ox = elements[s].attr("x");
-						elements[s].oy = elements[s].attr("y");
-						if(elements[s].type == "text") {
-							elements[s].w = elements[s].getBBox().width;
-							elements[s].h = elements[s].getBBox().height;
+		switch(this.representation){
+			case "file":
+				var start = function() {
+					// mainBox
+					var path0 = elements[0].pathToR();
+					var dim0 = elements[0].pathDim(path0);
+					elements[0].ox = path0[0][1];
+					elements[0].oy = path0[0][2];
+					elements[0].w = dim0.width;
+					elements[0].h = dim0.height;
+					elements[0].oop = elements[0].attr("opacity");
+					elements[0].animate({"fill-opacity": 0}, 600);
+					// corner
+					var path1 = elements[1].pathToR();
+					var dim1 = elements[1].pathDim(path1);
+					elements[1].ox = path1[0][1];
+					elements[1].oy = path1[0][2];
+					elements[1].w = dim1.width;
+					elements[1].h = dim1.height;
+					// text
+					elements[2].ox = elements[2].attr("x");
+					elements[2].oy = elements[2].attr("y");
+					elements[2].w = elements[2].getBBox().width;
+					elements[2].h = elements[2].getBBox().height;
+					// reflection
+					elements[3].ox = elements[3].attr("x");
+					elements[3].oy = elements[3].attr("y");
+					elements[3].w = elements[3].attr("width");
+					elements[3].h = elements[3].attr("height");
+					// saves opacity - if not set, saves as 1
+					for(var s = 0; s < elements.length; s++) {
+						if(elements[s].attr("opacity")) {
+							elements[s].oop = elements[s].attr("opacity");
 						}
 						else {
-							elements[s].w = elements[s].attr("width");
-							elements[s].h = elements[s].attr("height");
+							elements[s].oop = 1;
 						}
-						break;
-				}
-				
-				if(elements[s].attr("opacity")) {
-					elements[s].oop = elements[s].attr("opacity");
-				}
-				else {
-					elements[s].oop = 1;
-				}
-				if(s < 1) elements[s].animate({"fill-opacity": 0}, 500);
-			}
-			for(var i = 0; i < links.length; i++) {
-				links[i].line.attr({"stroke-width": 2.5});
-			}
-		},
-		move = function(dx, dy) {
-			for(var m = 0; m < elements.length; m++) {
-				switch (elements[m].type) {
-					case "path":
-						var nx = elements[m].ox + dx;
-						var ny = elements[m].oy + dy;
-						
-						if(m == 0) {
-							if(nx < 0) nx = 12;
-							if(nx + elements[m].w > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w + 12;
-							if(ny < 0) ny = 0;
-							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[m].h - elements[3].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h - elements[3].h;
-						}
-						else {
-							if(nx < 0) nx = 0;
-							if(nx + elements[0].w > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
-							if(ny < elements[m].h) ny = elements[m].h;
-							if(ny + elements[0].h > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[0].h;
-						}
-						
-						var path = elements[m].pathToR();
-						path[0][1] = nx;
-						path[0][2] = ny;
-						elements[m].setAttr({path: path});
-						break;
-					case "circle":
-						var nx = elements[m].ox + dx - elements[m].r;
-						var ny = elements[m].oy + dy - elements[m].r;
-						
-						if(nx < 0) nx = elements[m].r;
-						if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].r;
-						if(ny < 0) ny = elements[m].r;
-						if(ny > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].r;
-						
-						elements[m].setAttr({
-							cx: nx, 
-							cy: ny
-						});
-						break;
-					default:
-						var nx = elements[m].ox + dx;
-						var ny = elements[m].oy + dy;
-						
-						if(elements[m].type == "text") {
-							if(nx < 0) nx = 15;
-							if(nx > KBGraphic.width * KBGraphic.zoomValue - elements[m].w - 15) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w - 15;
-							if(ny < 12 + elements[m].h / 2) ny = elements[m].h / 2 + 12;
-							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h;
-						}
-						else {
-							if(nx < 0) nx = 0;
-							if(nx > KBGraphic.width * KBGraphic.zoomValue - elements[m].w) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w;
-							if(ny < elements[0].h) ny = elements[0].h;
-							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[m].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h;
-						}
-						
-						elements[m].setAttr({
-							x: nx, 
-							y: ny
-						});
-						break;
-				}
-			}
-			for (var i = links.length; i--;) {
-				this.paper.connection(links[i]);
-			}
-		},
-		up = function() {
-			for(var u = 0; u < elements.length; u++) {
-				elements[u].setAttr({
-					cursor: "pointer"
-				});
-				if(u < 1) elements[u].animate({"fill-opacity": elements[u].oop}, 500);
-			}
-
-			for(var i = 0; i < links.length; i++) {
-				links[i].line.attr({"stroke-width": .8});
-			}
-		};
-		
-		this.raphElement[0].drag(move, start, up);
+					}
+					// update connection links
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": 2.5});
+					}
+				},
+				move = function(dx, dy) {
+					// mainBox
+					var n0x = elements[0].ox + dx;
+					var n0y = elements[0].oy + dy;
+					if(n0x < 0) n0x = 12;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h;
+					if(n0y < 0) n0y = 0;
+					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h;
+					var path0 = elements[0].pathToR();
+					path0[0][1] = n0x;
+					path0[0][2] = n0y;
+					elements[0].setAttr({path: path0});
+					// corner
+					var n1x = elements[1].ox + dx;
+					var n1y = elements[1].oy + dy;
+					if(n1x < 0) n1x = 0;
+					if(n1x + elements[0].w > KBGraphic.width * KBGraphic.zoomValue) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
+					if(n1y < elements[1].h) n1y = elements[1].h;
+					if(n1y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h + elements[1].h) n1y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h + elements[1].h;
+					var path1 = elements[1].pathToR();
+					path1[0][1] = n1x;
+					path1[0][2] = n1y;
+					elements[1].setAttr({path: path1});
+					// text
+					var n2x = elements[2].ox + dx;
+					var n2y = elements[2].oy + dy;
+					if(n2x < 0) n2x = 15;
+					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15;
+					if(n2y < 12 + elements[2].h / 2) n2y = elements[2].h / 2 + 12;
+					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h;
+					elements[2].setAttr({
+						x: n2x, 
+						y: n2y
+					});
+					// reflection
+					var n3x = elements[3].ox + dx;
+					var n3y = elements[3].oy + dy;
+					if(n3x < 0) n3x = 0;
+					if(n3x > KBGraphic.width * KBGraphic.zoomValue - elements[3].w) n3x = KBGraphic.width * KBGraphic.zoomValue - elements[3].w;
+					if(n3y < elements[0].h) n3y = elements[0].h;
+					if(n3y > KBGraphic.height * KBGraphic.zoomValue - elements[3].h) n3y = KBGraphic.height * KBGraphic.zoomValue - elements[3].h;
+					elements[3].setAttr({
+						x: n3x, 
+						y: n3y
+					});
+					for (var i = links.length; i--;) {
+						this.paper.connection(links[i]);
+					}
+				},
+				up = function() {
+					elements[0].animate({"fill-opacity": elements[0].oop}, 600);
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": .8});
+					}
+				};
+				elements[0].drag(move, start, up);
+				break;
+			default:
+				break;
+		}
 	};
 	
 	this.drawLink = function() {
@@ -377,6 +438,8 @@ var KBGraphic = new function() {
 		$('#' + this.idPaper).css('float', 'left');				  //
 		$('#' + this.idPaper).css('border', '2px #A2A2A2 solid'); //  CSS for the div
 		$('#' + this.idPaper).css('margin', '20px'); 			  //
+		$('#' + this.idPaper).css('width', this.width + 'px'); 			  //
+		$('#' + this.idPaper).css('height', this.height + 'px'); 			  //
 		$('<div id="' + this.idPaper + '_clear">&nbsp;</div>').appendTo('#' + id); // adds a div with clear style for a nice display
 		$('#' + this.idPaper + '_clear').css('clear', 'both');	
 		this.elements = new Array();
@@ -443,7 +506,11 @@ var KBGraphic = new function() {
 	};
 		
 	this.draw = function() {
-		var t = new KBElement("step", "file", 10, ["Étape 01", "Étape 01\n\nDescription : OK.\n\nCommentaires : Je suis une étape\nEntrée : Ok !!!!!!!!!!!!!"]);
+		var r = new KBElement("offer", "file", 10, ["Offre 01", "Offre 01\n\nDescription : OK.\n\nCommentaires : Je suis une offre\nEntrée : Bah oui !!!!!!!!!!!!!"]);
+		r.init();
+		var s = new KBElement("offer", "file", 10, ["Offre 02", "Offre 02\n\nDescription : OK.\n\nCommentaires : Je suis une offre\nEntrée : Non ?!!!!"]);
+		s.init();
+		var t = new KBElement("step", "ball", 10, ["Étape 01","Étape 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une étape<br />Entrée : Ok !!!!!!!!!!!!!"]);
 		t.init();
 		var a = new KBElement("process", "file", 10, ["Processus 01", "Processus 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
 		a.init();
@@ -463,10 +530,11 @@ var KBGraphic = new function() {
 		t.drawLink();
 		c.linkedElements.push(e, f);
 		c.drawLink();
-		/*var b = new KBElement(this.paper.file(100, 100, 100, 55, 10, "etape", ["Étape 01", "Étape 01"]));
-		var c = new KBElement(this.paper.file(600, 200, 100, 55, 10, "act", ["Acte 01", "Acte 01"]));
-		var d = new KBElement(this.paper.file(300, 300, 100, 55, 10, "task", ["Tâche 01", "Tâche 01"]));*/
-		this.elements.push(a, b, c, d);
+		r.linkedElements.push(t);
+		r.drawLink();
+		s.linkedElements.push(t);
+		s.drawLink();
+		this.elements.push(a, b, c, d, e, f, r, s, t);
 	};
 	
 	// Check Out Radar Function

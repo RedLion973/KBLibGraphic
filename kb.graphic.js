@@ -63,8 +63,8 @@ Raphael.fn.connection = function (obj1, obj2, line, bg) {
 	} else {
 		var color = typeof line == "string" ? line : "#000";
 		return {
-			bg: bg && bg.split && this.path(path).initZoom() && this.path(path).setAttr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}),
-			line: this.path(path).initZoom() && this.path(path).setAttr({stroke: color, fill: "none"}),
+			bg: bg && bg.split && this.path(path).initZoom().toBack() && this.path(path).setAttr({stroke: bg.split("|")[0], fill: "none", "stroke-width": bg.split("|")[1] || 3}).toBack(),
+			line: this.path(path).initZoom().toBack() && this.path(path).setAttr({stroke: color, fill: "none"}).toBack(),
 			from: obj1,
 			to: obj2
 		};
@@ -123,25 +123,25 @@ Raphael.fn.file = function(maxx, maxy, fsize, type, data) {
 	var cInv;
 	
 	switch(type) {
-		case "etape":
-			c = '270-#FFFFFF-#A60000';
-			cInv = '90-#FFFFFF-#A60000';
-			t = '#A40000';
+		case "step":
+			c = '270-#FFFFFF-#DCFFBD';
+			cInv = '270-#DCFFBD-#FFFFFF';
+			t = '#75D025';
 			break;
 		case "process":
-			c = '270-#FFFFFF-#A600A6';
-			cInv = '90-#FFFFFF-#A600A6';
-			t = '#A400A4';
+			c = '270-#FFFFFF-#FFECC1';
+			cInv = '270-#FFECC1-#FFFFFF';
+			t = '#FFC53C';
 			break;
 		case "act":
-			c = '270-#FFFFFF-#00A600';
-			cInv = '90-#FFFFFF-#00A600';
-			t = '#00A400';
+			c = '270-#FFFFFF-#C5F0FF';
+			cInv = '270-#C5F0FF-#FFFFFF';
+			t = '#2EC7FF';
 			break;
 		case "task":
-			c = '270-#FFFFFF-#0000A6';
-			cInv = '90-#FFFFFF-#0000A6';
-			t = '#0000A4';
+			c = '270-#FFFFFF-#F4C7FF';
+			cInv = '270-#F4C7FF-#FFFFFF';
+			t = '#D942FF';
 			break;
 	}
 	
@@ -164,9 +164,9 @@ Raphael.fn.file = function(maxx, maxy, fsize, type, data) {
 		+ " L" + (x + 12) + " " + y 
 		+ " L" + x + y + " Z"
 	).initZoom();
-	corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 0.5, opacity: 0.55, "title": data[0]});
+	corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});
 	// Reflection
-	var reflect = this.rect(x, y + h, w, h / 6).initZoom();
+	var reflect = this.rect(x, y + h, w, h / 4).initZoom();
 	reflect.setAttr({fill: cInv, stroke: "none", opacity: 0.1});
 	// MainBox
 	var mainBox = this.path(
@@ -178,7 +178,7 @@ Raphael.fn.file = function(maxx, maxy, fsize, type, data) {
 		+ " L" + (x + 12) + " " + (y + 12)
 		+ " L" + (x + 12) + " " + y + " Z"
 	).initZoom();
-	mainBox.setAttr({fill: c, stroke: t, "stroke-width": 0.5, opacity: 0.55, "title": data[0]});	
+	mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});	
 	text.toFront();
 	return [mainBox, corner, text, reflect];
 } 
@@ -248,7 +248,7 @@ function KBElement(type, representation, fzise, data) {
 				else {
 					elements[s].oop = 1;
 				}
-				if(s < 2) elements[s].animate({"opacity": .2}, 500);
+				if(s < 1) elements[s].animate({"fill-opacity": 0}, 500);
 			}
 			for(var i = 0; i < links.length; i++) {
 				links[i].line.attr({"stroke-width": 2.5});
@@ -265,13 +265,13 @@ function KBElement(type, representation, fzise, data) {
 							if(nx < 0) nx = 12;
 							if(nx + elements[m].w > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w + 12;
 							if(ny < 0) ny = 0;
-							if(ny + elements[m].h > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h;
+							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[m].h - elements[3].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h - elements[3].h;
 						}
 						else {
 							if(nx < 0) nx = 0;
 							if(nx + elements[0].w > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
 							if(ny < elements[m].h) ny = elements[m].h;
-							if(ny + elements[0].h > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[0].h + 12;
+							if(ny + elements[0].h > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[0].h;
 						}
 						
 						var path = elements[m].pathToR();
@@ -299,15 +299,15 @@ function KBElement(type, representation, fzise, data) {
 						
 						if(elements[m].type == "text") {
 							if(nx < 0) nx = 15;
-							if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w - 15;
+							if(nx > KBGraphic.width * KBGraphic.zoomValue - elements[m].w - 15) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w - 15;
 							if(ny < 12 + elements[m].h / 2) ny = elements[m].h / 2 + 12;
-							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[m].h / 2 - 15) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h / 2 - 15;
+							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h;
 						}
 						else {
 							if(nx < 0) nx = 0;
-							if(nx > KBGraphic.width * KBGraphic.zoomValue) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w;
+							if(nx > KBGraphic.width * KBGraphic.zoomValue - elements[m].w) nx = KBGraphic.width * KBGraphic.zoomValue - elements[m].w;
 							if(ny < elements[0].h) ny = elements[0].h;
-							if(ny > KBGraphic.height * KBGraphic.zoomValue) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h + 12;
+							if(ny > KBGraphic.height * KBGraphic.zoomValue - elements[m].h) ny = KBGraphic.height * KBGraphic.zoomValue - elements[m].h;
 						}
 						
 						elements[m].setAttr({
@@ -326,7 +326,7 @@ function KBElement(type, representation, fzise, data) {
 				elements[u].setAttr({
 					cursor: "pointer"
 				});
-				if(u < 2) elements[u].animate({"opacity": elements[u].oop}, 500);
+				if(u < 1) elements[u].animate({"fill-opacity": elements[u].oop}, 500);
 			}
 
 			for(var i = 0; i < links.length; i++) {
@@ -360,6 +360,7 @@ var KBGraphic = new function() {
 	this.width; // canvas width
 	this.height; // canvas height
 	this.idPaper; // CSS id of the div containing the graphical elements
+	this.save2PNG; // CSS id of the png save button
 	this.elements; // list of elements the canvas contains
 	this.panBoxControls; // list of pan controls
 	this.zoomValue; // zoom current value
@@ -419,19 +420,49 @@ var KBGraphic = new function() {
 				}
 			}
 		}
+		this.save2PNG = id + '_save2png';
+		$('<a id="' + this.save2PNG + '" href="#">Save to PNG</a>').appendTo('#' + id);
+		$('<form id="saveForm" method="post" action="svg2png.php">'
+		+ '<input id="svgInput" type="hidden" name="svg" value="" />'
+		+ '<input id="svgWidth" type="hidden" name="width" value="' + this.width + '" />'
+		+ '<input id="svgHeight" type="hidden" name="height" value="' + this.height + '" />'
+		+ '</form>').appendTo('#' + id);
+		$('#saveForm').ajaxForm();
+		$('#' + this.save2PNG).css('margin', '20px');	
+		$('#' + this.save2PNG).click(function() {
+			var svg = $('#' + KBGraphic.idPaper);
+			var link = $(this);
+			$('#svgInput').attr('value', svg.html());
+			$('#saveForm').ajaxSubmit({
+				success: function() {					
+					window.open('getimage.php?file=test.png');
+				}
+			});
+			return false;
+		});	
 	};
 		
 	this.draw = function() {
+		var t = new KBElement("step", "file", 10, ["Étape 01", "Étape 01\n\nDescription : OK.\n\nCommentaires : Je suis une étape\nEntrée : Ok !!!!!!!!!!!!!"]);
+		t.init();
 		var a = new KBElement("process", "file", 10, ["Processus 01", "Processus 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
 		a.init();
-		var b = new KBElement("act", "file", 8, ["Acte 01", "Acte 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
+		var b = new KBElement("act", "file", 10, ["Acte 01", "Acte 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
 		b.init();
-		var c = new KBElement("act", "file", 8, ["Acte 02", "Acte 02\n\nDescription : OK.\n\nCommentaires : Bah oui ! Ici !\nTest : Ok !!!!!!!!!!!!!"]);
+		var c = new KBElement("act", "file", 10, ["Acte 02", "Acte 02\n\nDescription : OK.\n\nCommentaires : Bah oui ! Ici !\nTest : Ok !!!!!!!!!!!!!"]);
 		c.init();
-		var d = new KBElement("act", "file", 8, ["Acte 03", "Acte 03\n\nDescription : OK.\n\nCommentaires : ******\nTest : Ok !!!!!!!!!!!!!"]);
+		var d = new KBElement("act", "file", 10, ["Acte 03", "Acte 03\n\nDescription : OK.\n\nCommentaires : ******\nTest : Ok !!!!!!!!!!!!!"]);
 		d.init();
-		a.linkedElements.push(b, c, d)
+		var e = new KBElement("task", "file", 10, ["Tâche 01", "Tâche 01\n\nDescription : OK.\n\nCommentaires : *+++++**\nTest : Ok !!!!!!!!!!!!!"]);
+		e.init();
+		var f = new KBElement("task", "file", 10, ["Tâche 02", "Tâche 02\n\nDescription : OK.\n\nCommentaires : **+++-+-++*\nTest : Ok !!!!!!!!!!!!!"]);
+		f.init();
+		a.linkedElements.push(b, c, d);
 		a.drawLink();
+		t.linkedElements.push(a);
+		t.drawLink();
+		c.linkedElements.push(e, f);
+		c.drawLink();
 		/*var b = new KBElement(this.paper.file(100, 100, 100, 55, 10, "etape", ["Étape 01", "Étape 01"]));
 		var c = new KBElement(this.paper.file(600, 200, 100, 55, 10, "act", ["Acte 01", "Acte 01"]));
 		var d = new KBElement(this.paper.file(300, 300, 100, 55, 10, "task", ["Tâche 01", "Tâche 01"]));*/

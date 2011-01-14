@@ -672,6 +672,8 @@ var KBGraphic = new function() {
 		t.drawLink();
 		c.linkedElements.push(e, f);
 		c.drawLink();
+		d.linkedElements.push(e);
+		d.drawLink();
 		r.linkedElements.push(t);
 		r.drawLink();
 		s.linkedElements.push(t);

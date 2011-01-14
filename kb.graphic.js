@@ -119,7 +119,7 @@ Raphael.fn.arrow = function (x1, y1, x2, y2, size, color, branch) {
 // PCElement Drawer
 Raphael.fn.pcElementDrawer = {
 	// draws an element as a file graphic representation
-	file: function(maxx, maxy, fsize, type, data) {
+	file: function(maxx, maxy, fsize, type, title) {
 		var c;
 		var t;
 		var cInv;
@@ -155,9 +155,9 @@ Raphael.fn.pcElementDrawer = {
 		var x = Math.floor(Math.random() * maxx + 1);
 		var y = Math.floor(Math.random() * maxy + 1);
 		// Text
-		var text = this.text(x + 12, y, data[1]).attr({"font-size": fsize, "font-family": "Verdana", fill: t, "text-anchor": "start"});
-		var w = text.getBBox().width + 30;
-		var h = text.getBBox().height + 30;
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: t, "text-anchor": "start", "cursor": "pointer"});
+		var w = text.getBBox().width + 23;
+		var h = text.getBBox().height + 23;
 		var dx = 0;
 		var dy = 0;
 		if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
@@ -171,7 +171,7 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + y 
 			+ " L" + x + y + " Z"
 		).initZoom();
-		corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "title": data[0]});
+		corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "cursor": "pointer"});
 		// Reflection
 		var reflect = this.rect(x, y + h, w, h / 4).initZoom();
 		reflect.setAttr({fill: cInv, stroke: "none", opacity: 0.1});
@@ -185,46 +185,41 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + (y + 12)
 			+ " L" + (x + 12) + " " + y + " Z"
 		).initZoom();
-		mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "title": data[0], "cursor": "pointer", "title": data[0]});	
+		mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "cursor": "pointer"});	
 		text.toFront();
 		return [mainBox, corner, text, reflect];
 	},
 
 	// draw an element as a ball representation
-	ball: function (maxx, maxy, fsize, type, data) {
+	ball: function (maxx, maxy, fsize, type, title) {
 		var c;
 		var t;
 		var cInv;
 		var tooltip = $('#tooltip_ball');
-		if(!tooltip) {
-			$('<div id="tooltip_ball"></div>').insertAfter('#' + KBGraphic.idPaper);
-			tooltip = $('#tooltip_ball');
-		}
-		tooltip.hide();
 		
 		switch(type) {
 			case "offer":
-				c = 'r(.5,.9)#FFFFFF-#FF2323';
+				c = 'r(.5,.9)#FFFFFF-#FFC2C2';
 				cInv = 'r#FF2323-#FFFFFF';
 				t = '#FF2323';
 				break;
 			case "step":
-				c = 'r(.5,.9)#FFFFFF-#75D025';
+				c = 'r(.5,.9)#FFFFFF-#DCFFBD';
 				cInv = 'r#75D025-#FFFFFF';
 				t = '#75D025';
 				break;
 			case "process":
-				c = 'r(.5,.9)#FFFFFF-#FFC53C';
+				c = 'r(.5,.9)#FFFFFF-#FFECC1';
 				cInv = 'r#FFC53C-#FFFFFF';
 				t = '#FFC53C';
 				break;
 			case "act":
-				c = 'r(.5,.9)#FFFFFF-#2EC7FFF';
-				cInv = 'r#2EC7FFF-#FFFFFF';
+				c = 'r(.5,.9)#FFFFFF-#C5F0FF';
+				cInv = 'r#2EC7FF-#FFFFFF';
 				t = '#2EC7FF';
 				break;
 			case "task":
-				c = 'r(.5,.9)#FFFFFF-#D942FF';
+				c = 'r(.5,.9)#FFFFFF-#F4C7FF';
 				cInv = 'r#D942FF-#FFFFFF';
 				t = '#D942FF';
 				break;
@@ -233,30 +228,30 @@ Raphael.fn.pcElementDrawer = {
 		var x = Math.floor(Math.random() * maxx + 1);
 		var y = Math.floor(Math.random() * maxy + 1);
 		// Text
-		var text = this.text(x + 12, y, data[0]).attr({"font-size": fsize, "font-family": "Verdana", fill: t});
-		var w = text.getBBox().width + 30;
-		var h = text.getBBox().height + 30;
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: t, "cursor": "pointer"});
+		var w = text.getBBox().width + 15;
+		var h = text.getBBox().height + 15;
 		var dx = 0;
 		var dy = 0;
 		if(w >= h) r = w / 2;
 		else r = h / 2
 		if(x > maxx - r) x = maxx - r;
 		if(y > maxy - r) y = maxy - r;
+		if(x < 1 - r) x = 1 + r;
+		if(y < 1 - r) y = 1 + r;
 		text.translate(x  - text.attr("x"), y - text.attr("y"));
 		text.initZoom();
 		// MainEllispe
 		var mainEl = this.ellipse(x, y, r, r).initZoom();
-		mainEl.setAttr({fill: c, stroke: "none", opacity: 0.5});
+		mainEl.setAttr({fill: c, stroke: "none", opacity: 1, "cursor": "pointer", stroke: t, "stroke-width": .4});
 		// Light
 		var light = this.ellipse(x, y, r - r / 5, r - r / 20).initZoom();
-		light.setAttr({stroke: "none", fill: "r(.5,.1)#EEE-#EEE", opacity: 0});
+		light.setAttr({stroke: "none", fill: "r(.5,.1)#FFF-#FFF", opacity: 0, "cursor": "pointer"});
 		// Reflection
 		var reflect = this.ellipse(x, y + r - r / 5, r, r / 2).initZoom();
 		reflect.setAttr({fill: cInv, stroke: "none", opacity: .4});
 		text.toFront();
 		reflect.toBack();
-		//addTip(light.node, data[1]);
-		//addTip(mainEl.node, data[1]);
 		return [mainEl, light, text, reflect];
 	}
 }
@@ -273,8 +268,9 @@ function KBElement(type, representation, fzise, data) {
 	this.data = data;
 	
 	this.init = function() {
-		this.setElement(this.type, this.representation, this.fontSize, this.data);
-		this.setSimpleDragAndDrop(this.links, this.raphElement);
+		this.setElement(this.type, this.representation, this.fontSize, this.data[0]);
+		this.setDragAndDrop(this.links, this.raphElement);
+		this.setHOver(this.data[1]);
 	};
 	
 	this.setElement = function(type, representation, fsize, data) {
@@ -292,7 +288,7 @@ function KBElement(type, representation, fzise, data) {
 		}
 	};
 	
-	this.setSimpleDragAndDrop = function(links, elements) {
+	this.setDragAndDrop = function(links, elements) {
 		switch(this.representation){
 			case "file":
 				var start = function() {
@@ -392,11 +388,123 @@ function KBElement(type, representation, fzise, data) {
 					}
 				};
 				elements[0].drag(move, start, up);
+				elements[1].drag(move, start, up);
+				elements[2].drag(move, start, up);
 				break;
+			case "ball":
+				var start = function() {
+					// mainEl
+					elements[0].ox = elements[0].attr("cx");
+					elements[0].oy = elements[0].attr("cy");
+					elements[0].w = elements[0].attr("rx");
+					elements[0].h = elements[0].attr("ry");
+					elements[0].oop = elements[0].attr("opacity");
+					elements[0].animate({"fill-opacity": 0}, 600);
+					// light
+					elements[1].ox = elements[1].attr("cx");
+					elements[1].oy = elements[1].attr("cy");
+					elements[1].w = elements[1].attr("rx");
+					elements[1].h = elements[1].attr("ry");
+					// text
+					elements[2].ox = elements[2].attr("x");
+					elements[2].oy = elements[2].attr("y");
+					elements[2].w = elements[2].getBBox().width;
+					elements[2].h = elements[2].getBBox().height;
+					// reflection
+					elements[3].ox = elements[3].attr("cx");
+					elements[3].oy = elements[3].attr("cy");
+					elements[3].w = elements[3].attr("rx");
+					elements[3].h = elements[3].attr("ry");
+					elements[3].animate({"fill-opacity": 0}, 600);
+					// saves opacity - if not set, saves as 1
+					for(var s = 0; s < elements.length; s++) {
+						if(elements[s].attr("opacity")) {
+							elements[s].oop = elements[s].attr("opacity");
+						}
+						else {
+							elements[s].oop = 1;
+						}
+					}
+					// update connection links
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": 2.5});
+					}
+				},
+				move = function(dx, dy) {
+					// mainEl
+					var n0x = elements[0].ox + dx;
+					var n0y = elements[0].oy + dy;
+					if(n0x < elements[0].w) n0x = elements[0].w;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
+					if(n0y < elements[0].h) n0y = elements[0].h;
+					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h;
+					elements[0].setAttr({
+						cx: n0x,
+						cy: n0y
+					});
+					// light
+					var n1x = elements[1].ox + dx;
+					var n1y = elements[1].oy + dy;
+					if(n1x < elements[1].w) n1x = elements[1].w;
+					if(n1x > KBGraphic.width * KBGraphic.zoomValue - elements[1].w) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[1].w;
+					if(n1y < elements[1].h) n1y = elements[1].h;
+					if(n1y > KBGraphic.height * KBGraphic.zoomValue - elements[1].h) n1y = KBGraphic.height * KBGraphic.zoomValue - elements[1].h;
+					elements[1].setAttr({
+						cx: n1x,
+						cy: n1y
+					});
+					// text
+					var n2x = elements[2].ox + dx;
+					var n2y = elements[2].oy + dy;
+					if(n2x < elements[0].w) n2x = elements[0].w;
+					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
+					if(n2y < elements[0].h) n2y = elements[0].h;
+					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h;
+					elements[2].setAttr({
+						x: n2x, 
+						y: n2y
+					});
+					// reflection
+					var n3x = elements[3].ox + dx;
+					var n3y = elements[3].oy + dy;
+					if(n3x < elements[0].w) n3x = elements[0].w;
+					if(n3x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w) n3x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
+					if(n3y < elements[0].h - elements[0].h / 5) n3y = elements[0].h - elements[0].h / 5;
+					if(n3y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 5) n3y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 5;
+					elements[3].setAttr({
+						cx: n3x, 
+						cy: n3y
+					});
+					for (var i = links.length; i--;) {
+						this.paper.connection(links[i]);
+					}
+				},
+				up = function() {
+					elements[0].animate({"fill-opacity": elements[0].oop}, 600);
+					elements[3].animate({"fill-opacity": elements[0].oop}, 600);
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": .8});
+					}
+				};
+				elements[0].drag(move, start, up);
+				elements[1].drag(move, start, up);
+				elements[2].drag(move, start, up);
 			default:
 				break;
 		}
 	};
+	
+	this.setHOver = function(info) {
+		var displayBox = $('#' + KBGraphic.infoDisplayBox);
+		for(var i = 0; i < this.raphElement.length; i++) {
+			$(this.raphElement[i].node).bind('mouseover', function() {
+				displayBox.html(info);
+			});
+			$(this.raphElement[i].node).bind('mouseout', function() {
+				displayBox.html("&nbsp;");
+			});
+		}
+	}
 	
 	this.drawLink = function() {
 		for(var i = 0; i < this.linkedElements.length; i++) {
@@ -422,8 +530,10 @@ var KBGraphic = new function() {
 	this.height; // canvas height
 	this.idPaper; // CSS id of the div containing the graphical elements
 	this.save2PNG; // CSS id of the png save button
+	this.infoDisplayBox; // CSS id of the div displaying element info
 	this.elements; // list of elements the canvas contains
 	this.panBoxControls; // list of pan controls
+	this.idControlBox; // CSS id of the div containing all controls
 	this.zoomValue; // zoom current value
 	this.minZoom; // minimum value of zoom
 	this.maxZoom; // maximum value of zoom
@@ -443,6 +553,15 @@ var KBGraphic = new function() {
 		$('<div id="' + this.idPaper + '_clear">&nbsp;</div>').appendTo('#' + id); // adds a div with clear style for a nice display
 		$('#' + this.idPaper + '_clear').css('clear', 'both');	
 		this.elements = new Array();
+		// Control Box
+		this.idControlBox = this.idPaper + '_controls';
+		$('<div id="' + this.idControlBox + '"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
+		$('#' + this.idControlBox).css('float', 'left');	   	   //
+		$('#' + this.idControlBox).css('clear', 'right');	       // CSS for the div
+		$('#' + this.idControlBox).css('margin-left', '20px'); 	   //  with pan controls
+		$('#' + this.idControlBox).css('margin-top', '20px');      //
+		$('#' + this.idControlBox).css('font-family', 'Verdana');  //
+		$('#' + this.idControlBox).css('font-size', '11px');       //
 		// if zoom is not enabled
 		if(enableZoom == false) {
 			this.paper = Raphael(this.idPaper, this.width, this.height); // creates canvas without the zoom feature
@@ -461,7 +580,6 @@ var KBGraphic = new function() {
 				this.minZoom = minZoom / 100;
 				this.maxZoom = maxZoom / 100;
 				this.viewport = zpd.gelem; // sets the viewport
-				this.draw(); // drawing test
 				this.matrix = new Array(1, 0, 0, 1, 0, 0); //defines the default viewport transform matrix
 				this.panBoxControls = new Array(); // list of pan controls
 				this.scaleRadar = 0.208 // scale for radar
@@ -484,14 +602,29 @@ var KBGraphic = new function() {
 			}
 		}
 		this.save2PNG = id + '_save2png';
-		$('<a id="' + this.save2PNG + '" href="#">Save to PNG</a>').appendTo('#' + id);
+		$('<button id="' + this.save2PNG + '">Exporter au format PNG</button>').appendTo('#' + this.idControlBox);
 		$('<form id="saveForm" method="post" action="svg2png.php">'
 		+ '<input id="svgInput" type="hidden" name="svg" value="" />'
 		+ '<input id="svgWidth" type="hidden" name="width" value="' + this.width + '" />'
 		+ '<input id="svgHeight" type="hidden" name="height" value="' + this.height + '" />'
 		+ '</form>').appendTo('#' + id);
 		$('#saveForm').ajaxForm();
-		$('#' + this.save2PNG).css('margin', '20px');	
+		$('#' + this.save2PNG).css('margin-top', '30px');	
+		$('#' + this.save2PNG).css('background-color', '#DDDDDD');	
+		$('#' + this.save2PNG).css('border', '1px #A2A2A2 solid');	
+		$('#' + this.save2PNG).css('padding', '2px');	
+		$('#' + this.save2PNG).css('color', '#A2A2A2');	
+		$('#' + this.save2PNG).css('font-weight', 'bold');		
+		$('#' + this.save2PNG).hover(
+			function() {
+				$(this).css('border', '1px #2A2A2A solid');		
+				$(this).css('color', '#2A2A2A');	
+			},
+			function() {
+				$(this).css('border', '1px #A2A2A2 solid');	
+				$(this).css('color', '#A2A2A2');
+			}
+		);		
 		$('#' + this.save2PNG).click(function() {
 			var svg = $('#' + KBGraphic.idPaper);
 			var link = $(this);
@@ -502,27 +635,36 @@ var KBGraphic = new function() {
 				}
 			});
 			return false;
-		});	
+		});
+		this.infoDisplayBox = id + '_infodisplay';
+		$('<div id="' + this.infoDisplayBox + '">&nbsp;</div>').appendTo('#' + this.idControlBox);
+		$('#' + this.infoDisplayBox).css('border', '1px #2A2A2A solid');
+		$('#' + this.infoDisplayBox).css('color', '#2A2A2A');
+		$('#' + this.infoDisplayBox).css('padding', '5px');
+		$('#' + this.infoDisplayBox).css('min-height', '50px');
+		$('#' + this.infoDisplayBox).css('max-width', '200px');
+		$('<p>Informations</p>').css('margin-top', '30px').css('color', '#2A2A2A').insertBefore('#' + this.infoDisplayBox);
+		this.draw(); // drawing test
 	};
 		
 	this.draw = function() {
-		var r = new KBElement("offer", "file", 10, ["Offre 01", "Offre 01\n\nDescription : OK.\n\nCommentaires : Je suis une offre\nEntrée : Bah oui !!!!!!!!!!!!!"]);
+		var r = new KBElement("offer", "file", 10, ["Offre 01", "Offre 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Bah oui !!!!!!!!!!!!!"]);
 		r.init();
-		var s = new KBElement("offer", "file", 10, ["Offre 02", "Offre 02\n\nDescription : OK.\n\nCommentaires : Je suis une offre\nEntrée : Non ?!!!!"]);
+		var s = new KBElement("offer", "file", 10, ["Offre 02", "Offre 02<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Non ?!!!!"]);
 		s.init();
 		var t = new KBElement("step", "ball", 10, ["Étape 01","Étape 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une étape<br />Entrée : Ok !!!!!!!!!!!!!"]);
 		t.init();
-		var a = new KBElement("process", "file", 10, ["Processus 01", "Processus 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
+		var a = new KBElement("process", "ball", 10, ["Processus 01", "Processus 01<br /><br />Description : OK.<br /><br />Commentaires : Aucun<br />Test : Ok !!!!!!!!!!!!!"]);
 		a.init();
-		var b = new KBElement("act", "file", 10, ["Acte 01", "Acte 01\n\nDescription : OK.\n\nCommentaires : Aucun\nTest : Ok !!!!!!!!!!!!!"]);
+		var b = new KBElement("act", "file", 10, ["Acte 01", "Acte 01<br /><br />Description : OK.<br /><br />Commentaires : Aucun<br />Test : Ok !!!!!!!!!!!!!"]);
 		b.init();
-		var c = new KBElement("act", "file", 10, ["Acte 02", "Acte 02\n\nDescription : OK.\n\nCommentaires : Bah oui ! Ici !\nTest : Ok !!!!!!!!!!!!!"]);
+		var c = new KBElement("act", "file", 10, ["Acte 02", "Acte 02<br /><br />Description : OK.<br /><br />Commentaires : Bah oui ! Ici !<br />Test : Ok !!!!!!!!!!!!!"]);
 		c.init();
-		var d = new KBElement("act", "file", 10, ["Acte 03", "Acte 03\n\nDescription : OK.\n\nCommentaires : ******\nTest : Ok !!!!!!!!!!!!!"]);
+		var d = new KBElement("act", "file", 10, ["Acte 03", "Acte 03<br /><br />Description : OK.<br /><br />Commentaires : ******<br />Test : Ok !!!!!!!!!!!!!"]);
 		d.init();
-		var e = new KBElement("task", "file", 10, ["Tâche 01", "Tâche 01\n\nDescription : OK.\n\nCommentaires : *+++++**\nTest : Ok !!!!!!!!!!!!!"]);
+		var e = new KBElement("task", "file", 10, ["Tâche 01", "Tâche 01<br /><br />Description : OK.<br /><br />Commentaires : *+++++**<br />Test : Ok !!!!!!!!!!!!!"]);
 		e.init();
-		var f = new KBElement("task", "file", 10, ["Tâche 02", "Tâche 02\n\nDescription : OK.\n\nCommentaires : **+++-+-++*\nTest : Ok !!!!!!!!!!!!!"]);
+		var f = new KBElement("task", "file", 10, ["Tâche 02", "Tâche 02<br /><br />Description : OK.<br /><br />Commentaires : **+++-+-++*<br />Test : Ok !!!!!!!!!!!!!"]);
 		f.init();
 		a.linkedElements.push(b, c, d);
 		a.drawLink();
@@ -573,13 +715,13 @@ var KBGraphic = new function() {
 		if(this.matrix[4] > 0) {
 			$(this.panBoxControls[2][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[2][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[2][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -597,13 +739,13 @@ var KBGraphic = new function() {
 			});
 			$(this.panBoxControls[2][1].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[2][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[2][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -633,13 +775,13 @@ var KBGraphic = new function() {
 		if(this.matrix[4] < this.width * (this.zoomValue - 1)) {
 			$(this.panBoxControls[3][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[3][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[3][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -657,13 +799,13 @@ var KBGraphic = new function() {
 			});
 			$(this.panBoxControls[3][1].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[3][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[3][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -721,13 +863,13 @@ var KBGraphic = new function() {
 		if(this.matrix[5] > 0) {
 			$(this.panBoxControls[0][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[0][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[0][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -745,13 +887,13 @@ var KBGraphic = new function() {
 			});
 			$(this.panBoxControls[0][1].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[0][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[0][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -781,13 +923,13 @@ var KBGraphic = new function() {
 		if(this.matrix[5] < this.height * (this.zoomValue - 1)) {
 			$(this.panBoxControls[1][0].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[1][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[1][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -805,13 +947,13 @@ var KBGraphic = new function() {
 			});
 			$(this.panBoxControls[1][1].node).bind('mouseover', function() {
 				KBGraphic.panBoxControls[1][0].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 				KBGraphic.panBoxControls[1][1].attr({
-					"fill": "#25963A",
-					"stroke": "#25963A",
+					"fill": "#2A2A2A",
+					"stroke": "#2A2A2A",
 					"cursor": "pointer"
 				});
 			});
@@ -881,17 +1023,9 @@ var KBGraphic = new function() {
 	//  Set Zoom Controls Function
 	// creates the zoom and pan feature
 	this.setZoomControls = function(paper, viewport, matrix) {
-		// Control Box
-		var idControlBox = this.idPaper + '_controls';
-		$('<div id="' + idControlBox + '"></div>').insertAfter('#' + this.idPaper); // adds the div with pan controls
-		$('#' + idControlBox).css('float', 'left');		  //
-		$('#' + idControlBox).css('clear', 'right');	  // CSS for the div
-		$('#' + idControlBox).css('margin-left', '20px'); //  with pan controls
-		$('#' + idControlBox).css('margin-top', '20px');  //
-		
 		// Pan Controls
 		var idPanControls = this.idPaper + '_pan_controls';
-		$('<div id="' + idPanControls + '"></div>').appendTo('#' + idControlBox); // adds the div with pan controls
+		$('<div id="' + idPanControls + '"></div>').appendTo('#' + this.idControlBox); // adds the div with pan controls
 		var panBox = Raphael(idPanControls, 100, 100); // draws the controls  canvas
 		this.panBoxControls.push(
 			panBox.arrow(50, 50, 50, 15, 9, '#A2A2A2', true),    // upArrow
@@ -958,7 +1092,7 @@ var KBGraphic = new function() {
 		// Zoom Controls
 		var idZoomControls = this.idPaper + '_zoom_controls';
 		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
-		$('<div id="' + idZoomControls + '"></div>').appendTo('#' + idControlBox); // adds the div with zoom controls
+		$('<div id="' + idZoomControls + '"></div>').appendTo('#' + this.idControlBox); // adds the div with zoom controls
 		$('#' + idZoomControls).css('margin-top', '30px');
 		var idZoomControlsList = this.idPaper + '_zoom_controls_list';
 		// adds the ul for list of zoom controls
@@ -990,13 +1124,13 @@ var KBGraphic = new function() {
 		var idRadarTarget = idRadar + '_target';
 		var targetWidth = this.width * this.scaleRadar;
 		var targetHeight = this.height * this.scaleRadar;
-		$('<div id="' + idRadar + '"></div>').appendTo('#' + idControlBox); // adds the div with radar
+		$('<div id="' + idRadar + '"></div>').appendTo('#' + this.idControlBox); // adds the div with radar
 		$('#' + idRadar).css('margin-top', '30px');
 		$('#' + idRadar).css('border', '1px #A2A2A2 dashed');
 		$('#' + idRadar).css('width', targetWidth + 'px');
 		$('#' + idRadar).css('height', targetHeight + 'px');
 		$('<div id="' + idRadarTarget + '">&nbsp;</div>').appendTo('#' + idRadar); // adds the div with radar
-		$('#' + idRadarTarget).css('border', '1px #A60000 solid');
+		$('#' + idRadarTarget).css('border', '1px #2A2A2A solid');
 		$('#' + idRadarTarget).css('width', targetWidth + 'px');
 		$('#' + idRadarTarget).css('height', targetHeight + 'px');
 		$('#' + idRadarTarget).attr('targetHeight', targetHeight);

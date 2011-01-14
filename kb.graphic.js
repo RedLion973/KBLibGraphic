@@ -118,44 +118,12 @@ Raphael.fn.arrow = function (x1, y1, x2, y2, size, color, branch) {
 
 // PCElement Drawer
 Raphael.fn.pcElementDrawer = {
-	// draws an element as a file graphic representation
-	file: function(maxx, maxy, fsize, type, title) {
-		var c;
-		var t;
-		var cInv;
-		
-		switch(type) {
-			case "offer":
-				c = '270-#FFFFFF-#FFC2C2';
-				cInv = '270-#FFC2C2-#FFFFFF';
-				t = '#FF2323';
-				break;
-			case "step":
-				c = '270-#FFFFFF-#DCFFBD';
-				cInv = '270-#DCFFBD-#FFFFFF';
-				t = '#75D025';
-				break;
-			case "process":
-				c = '270-#FFFFFF-#FFECC1';
-				cInv = '270-#FFECC1-#FFFFFF';
-				t = '#FFC53C';
-				break;
-			case "act":
-				c = '270-#FFFFFF-#C5F0FF';
-				cInv = '270-#C5F0FF-#FFFFFF';
-				t = '#2EC7FF';
-				break;
-			case "task":
-				c = '270-#FFFFFF-#F4C7FF';
-				cInv = '270-#F4C7FF-#FFFFFF';
-				t = '#D942FF';
-				break;
-		}
-		
+	// draws an element as a file-like representation
+	file: function(maxx, maxy, fsize, colors, title) {
 		var x = Math.floor(Math.random() * maxx + 1);
 		var y = Math.floor(Math.random() * maxy + 1);
 		// Text
-		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: t, "text-anchor": "start", "cursor": "pointer"});
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: colors[2], "text-anchor": "start", "cursor": "pointer"});
 		var w = text.getBBox().width + 23;
 		var h = text.getBBox().height + 23;
 		var dx = 0;
@@ -171,10 +139,10 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + y 
 			+ " L" + x + y + " Z"
 		).initZoom();
-		corner.setAttr({fill: c.split("-")[1], stroke: t, "stroke-width": 1, opacity: 1, "cursor": "pointer"});
+		corner.setAttr({fill: colors[0].split("-")[1], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});
 		// Reflection
-		var reflect = this.rect(x, y + h, w, h / 4).initZoom();
-		reflect.setAttr({fill: cInv, stroke: "none", opacity: 0.1});
+		var reflect = this.rect(x, y + h, w, h / 2).initZoom();
+		reflect.setAttr({fill: colors[1], stroke: "none", opacity: 0.1});
 		// MainBox
 		var mainBox = this.path(
 			"M" + (x + 12) + " " + y
@@ -185,50 +153,18 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + (y + 12)
 			+ " L" + (x + 12) + " " + y + " Z"
 		).initZoom();
-		mainBox.setAttr({fill: c, stroke: t, "stroke-width": 1, opacity: 1, "cursor": "pointer"});	
+		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});	
 		text.toFront();
+		reflect.toBack();
 		return [mainBox, corner, text, reflect];
 	},
 
 	// draw an element as a ball representation
-	ball: function (maxx, maxy, fsize, type, title) {
-		var c;
-		var t;
-		var cInv;
-		var tooltip = $('#tooltip_ball');
-		
-		switch(type) {
-			case "offer":
-				c = 'r(.5,.9)#FFFFFF-#FFC2C2';
-				cInv = 'r#FF2323-#FFFFFF';
-				t = '#FF2323';
-				break;
-			case "step":
-				c = 'r(.5,.9)#FFFFFF-#DCFFBD';
-				cInv = 'r#75D025-#FFFFFF';
-				t = '#75D025';
-				break;
-			case "process":
-				c = 'r(.5,.9)#FFFFFF-#FFECC1';
-				cInv = 'r#FFC53C-#FFFFFF';
-				t = '#FFC53C';
-				break;
-			case "act":
-				c = 'r(.5,.9)#FFFFFF-#C5F0FF';
-				cInv = 'r#2EC7FF-#FFFFFF';
-				t = '#2EC7FF';
-				break;
-			case "task":
-				c = 'r(.5,.9)#FFFFFF-#F4C7FF';
-				cInv = 'r#D942FF-#FFFFFF';
-				t = '#D942FF';
-				break;
-		}
-		
+	ball: function (maxx, maxy, fsize, colors, title) {
 		var x = Math.floor(Math.random() * maxx + 1);
 		var y = Math.floor(Math.random() * maxy + 1);
 		// Text
-		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: t, "cursor": "pointer"});
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: colors[2], "cursor": "pointer"});
 		var w = text.getBBox().width + 15;
 		var h = text.getBBox().height + 15;
 		var dx = 0;
@@ -243,16 +179,55 @@ Raphael.fn.pcElementDrawer = {
 		text.initZoom();
 		// MainEllispe
 		var mainEl = this.ellipse(x, y, r, r).initZoom();
-		mainEl.setAttr({fill: c, stroke: "none", opacity: 1, "cursor": "pointer", stroke: t, "stroke-width": .4});
+		mainEl.setAttr({fill: colors[0], stroke: "none", opacity: 1, "cursor": "pointer", stroke: colors[2], "stroke-width": .4});
 		// Light
 		var light = this.ellipse(x, y, r - r / 5, r - r / 20).initZoom();
 		light.setAttr({stroke: "none", fill: "r(.5,.1)#FFF-#FFF", opacity: 0, "cursor": "pointer"});
 		// Reflection
 		var reflect = this.ellipse(x, y + r - r / 5, r, r / 2).initZoom();
-		reflect.setAttr({fill: cInv, stroke: "none", opacity: .4});
+		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
 		text.toFront();
 		reflect.toBack();
 		return [mainEl, light, text, reflect];
+	},
+	
+	// draws an element as an half-flag-like representation
+	flag: function(maxx, maxy, fsize, colors, title) {
+		var x = Math.floor(Math.random() * maxx + 1);
+		var y = Math.floor(Math.random() * maxy + 1);	
+		// Text
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: colors[2], "text-anchor": "start", "cursor": "pointer"});
+		var w = text.getBBox().width + 23;
+		var h = text.getBBox().height + 23;
+		var dx = 0;
+		var dy = 0;
+		if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
+		if((y + h + 5) > maxy) y = y - ((y + h + 5) - maxy);
+		text.translate(x + 12 - text.attr("x"), y + (h / 2) - text.attr("y"));
+		text.initZoom();
+		// MainBox
+		var mainBox = this.path(
+			"M" + x + " " + y
+			+ " L" + (x + w) + " " + y
+			+ " L" + (x + w) + " " + (y + h)
+			+ " Q" + (x + w - w / 5) + " " + (y + h - h / 5)+ " " + (x + w / 2) + " " + (y + h)
+			+ " Q" + (x + w / 5) + " " + (y + h + h / 5)+ " " + x + " " + (y + h)
+			+ " L" + x + " " + y + " Z"
+		).initZoom();
+		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});
+		// Reflection
+		var reflect = this.path(
+			"M" + x + " " + (y + h)
+			+ " Q" + (x + w / 5) + " " + (y + h - h / 5)+ " " + (x + w / 2) + " " + (y + h)
+			+ " Q" + (x + w - w / 5) + " " + (y + h + h / 5)+ " " + (x + w) + " " + (y + h)
+			+ " L" + (x + w) + " " + (y + h + h / 2)
+			+ " L" + x + " " + (y + h + h / 2)
+			+ " L" + x + " " + (y + h) + " Z"
+		).initZoom();
+		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
+		text.toFront();
+		reflect.toBack();
+		return [mainBox, text, reflect];
 	}
 }
 
@@ -266,24 +241,90 @@ function KBElement(type, representation, fzise, data) {
 	this.representation = representation;
 	this.fontSize = fzise;
 	this.data = data;
+	this.colors = new Array();
 	
 	this.init = function() {
-		this.setElement(this.type, this.representation, this.fontSize, this.data[0]);
+		this.colors = this.setColors(this.representation, this.type);
+		this.setElement(this.colors, this.representation, this.fontSize, this.data[0]);
 		this.setDragAndDrop(this.links, this.raphElement);
 		this.setHOver(this.data[1]);
 	};
 	
-	this.setElement = function(type, representation, fsize, data) {
+	this.setColors = function(representation, type) {
+		var c, cInv, t;
+		switch(representation) {
+			case "ball":
+				switch(type) {
+					case "offer":
+						c = 'r(.5,.9)#FFFFFF-#FFC2C2';
+						cInv = 'r#FF2323-#FFFFFF';
+						t = '#FF2323';
+						break;
+					case "step":
+						c = 'r(.5,.9)#FFFFFF-#DCFFBD';
+						cInv = 'r#75D025-#FFFFFF';
+						t = '#75D025';
+						break;
+					case "process":
+						c = 'r(.5,.9)#FFFFFF-#FFECC1';
+						cInv = 'r#FFC53C-#FFFFFF';
+						t = '#FFC53C';
+						break;
+					case "act":
+						c = 'r(.5,.9)#FFFFFF-#C5F0FF';
+						cInv = 'r#2EC7FF-#FFFFFF';
+						t = '#2EC7FF';
+						break;
+					case "task":
+						c = 'r(.5,.9)#FFFFFF-#F4C7FF';
+						cInv = 'r#D942FF-#FFFFFF';
+						t = '#D942FF';
+						break;
+				}
+				break;
+			default:
+				switch(type) {
+					case "offer":
+						c = '270-#FFFFFF-#FFC2C2';
+						cInv = '270-#FFC2C2-#FFFFFF';
+						t = '#FF2323';
+						break;
+					case "step":
+						c = '270-#FFFFFF-#DCFFBD';
+						cInv = '270-#DCFFBD-#FFFFFF';
+						t = '#75D025';
+						break;
+					case "process":
+						c = '270-#FFFFFF-#FFECC1';
+						cInv = '270-#FFECC1-#FFFFFF';
+						t = '#FFC53C';
+						break;
+					case "act":
+						c = '270-#FFFFFF-#C5F0FF';
+						cInv = '270-#C5F0FF-#FFFFFF';
+						t = '#2EC7FF';
+						break;
+					case "task":
+						c = '270-#FFFFFF-#F4C7FF';
+						cInv = '270-#F4C7FF-#FFFFFF';
+						t = '#D942FF';
+						break;
+				}
+				break;
+		}
+		return [c, cInv, t];
+	}
+	
+	this.setElement = function(colors, representation, fsize, data) {
 		switch(representation) {
 			case "file":
-				var x = Math.floor(Math.random() * (KBGraphic.width - 51) + 1);
-				var y = Math.floor(Math.random() * (KBGraphic.height - 51) + 1);
-				this.raphElement = this.canvas.pcElementDrawer.file(KBGraphic.width - 51, KBGraphic.height - 51, fsize, type, data);
+				this.raphElement = this.canvas.pcElementDrawer.file(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
 				break;
 			case "ball":
-				var x = Math.floor(Math.random() * (KBGraphic.width - 51) + 1);
-				var y = Math.floor(Math.random() * (KBGraphic.height - 51) + 1);
-				this.raphElement = this.canvas.pcElementDrawer.ball(KBGraphic.width - 51, KBGraphic.height - 51, fsize, type, data);
+				this.raphElement = this.canvas.pcElementDrawer.ball(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
+				break;
+			case "flag":
+				this.raphElement = this.canvas.pcElementDrawer.flag(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
 				break;
 		}
 	};
@@ -489,6 +530,93 @@ function KBElement(type, representation, fzise, data) {
 				elements[0].drag(move, start, up);
 				elements[1].drag(move, start, up);
 				elements[2].drag(move, start, up);
+			case "file":
+				var start = function() {
+					// mainBox
+					var path0 = elements[0].pathToR();
+					var dim0 = elements[0].pathDim(path0);
+					elements[0].ox = path0[0][1];
+					elements[0].oy = path0[0][2];
+					elements[0].w = dim0.width;
+					elements[0].h = dim0.height;
+					elements[0].oop = elements[0].attr("opacity");
+					elements[0].animate({"fill-opacity": 0}, 600);
+					// text
+					elements[1].ox = elements[1].attr("x");
+					elements[1].oy = elements[1].attr("y");
+					elements[1].w = elements[1].getBBox().width;
+					elements[1].h = elements[1].getBBox().height;
+					// reflection
+					var path2 = elements[2].pathToR();
+					var dim2 = elements[2].pathDim(path2);
+					elements[2].ox = path2[0][1];
+					elements[2].oy = path2[0][2];
+					elements[2].w = dim2.width;
+					elements[2].h = dim2.height;
+					elements[2].oop = elements[2].attr("opacity");
+					elements[2].animate({"fill-opacity": 0}, 622);
+					// saves opacity - if not set, saves as 1
+					for(var s = 0; s < elements.length; s++) {
+						if(elements[s].attr("opacity")) {
+							elements[s].oop = elements[s].attr("opacity");
+						}
+						else {
+							elements[s].oop = 1;
+						}
+					}
+					// update connection links
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": 2.5});
+					}
+				},
+				move = function(dx, dy) {
+					// mainBox
+					var n0x = elements[0].ox + dx;
+					var n0y = elements[0].oy + dy;
+					if(n0x < 0) n0x = 12;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h;
+					if(n0y < 0) n0y = 0;
+					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[2].h) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[2].h;
+					var path0 = elements[0].pathToR();
+					path0[0][1] = n0x;
+					path0[0][2] = n0y;
+					elements[0].setAttr({path: path0});
+					// text
+					var n1x = elements[1].ox + dx;
+					var n1y = elements[1].oy + dy;
+					if(n2x < 0) n2x = 15;
+					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15;
+					if(n2y < 12 + elements[2].h / 2) n2y = elements[2].h / 2 + 12;
+					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h;
+					elements[2].setAttr({
+						x: n2x, 
+						y: n2y
+					});
+					// reflection
+					var n3x = elements[3].ox + dx;
+					var n3y = elements[3].oy + dy;
+					if(n3x < 0) n3x = 0;
+					if(n3x > KBGraphic.width * KBGraphic.zoomValue - elements[3].w) n3x = KBGraphic.width * KBGraphic.zoomValue - elements[3].w;
+					if(n3y < elements[0].h) n3y = elements[0].h;
+					if(n3y > KBGraphic.height * KBGraphic.zoomValue - elements[3].h) n3y = KBGraphic.height * KBGraphic.zoomValue - elements[3].h;
+					elements[3].setAttr({
+						x: n3x, 
+						y: n3y
+					});
+					for (var i = links.length; i--;) {
+						this.paper.connection(links[i]);
+					}
+				},
+				up = function() {
+					elements[0].animate({"fill-opacity": elements[0].oop}, 600);
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": .8});
+					}
+				};
+				elements[0].drag(move, start, up);
+				elements[1].drag(move, start, up);
+				elements[2].drag(move, start, up);
+				break;
 			default:
 				break;
 		}
@@ -648,7 +776,7 @@ var KBGraphic = new function() {
 	};
 		
 	this.draw = function() {
-		var r = new KBElement("offer", "file", 10, ["Offre 01", "Offre 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Bah oui !!!!!!!!!!!!!"]);
+		var r = new KBElement("offer", "flag", 10, ["Offre 01", "Offre 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Bah oui !!!!!!!!!!!!!"]);
 		r.init();
 		var s = new KBElement("offer", "file", 10, ["Offre 02", "Offre 02<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Non ?!!!!"]);
 		s.init();

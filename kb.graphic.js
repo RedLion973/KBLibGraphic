@@ -139,7 +139,7 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + y 
 			+ " L" + x + y + " Z"
 		).initZoom();
-		corner.setAttr({fill: colors[0].split("-")[1], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});
+		corner.setAttr({fill: colors[0].split("-")[1], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"});
 		// Reflection
 		var reflect = this.rect(x, y + h, w, h / 2).initZoom();
 		reflect.setAttr({fill: colors[1], stroke: "none", opacity: 0.1});
@@ -153,8 +153,10 @@ Raphael.fn.pcElementDrawer = {
 			+ " L" + (x + 12) + " " + (y + 12)
 			+ " L" + (x + 12) + " " + y + " Z"
 		).initZoom();
-		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});	
-		text.toFront();
+		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"});	
+		text.toBack();
+		corner.toBack();
+		mainBox.toBack();
 		reflect.toBack();
 		return [mainBox, corner, text, reflect];
 	},
@@ -186,7 +188,9 @@ Raphael.fn.pcElementDrawer = {
 		// Reflection
 		var reflect = this.ellipse(x, y + r - r / 5, r, r / 2).initZoom();
 		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
-		text.toFront();
+		text.toBack();
+		light.toBack();
+		mainEl.toBack();
 		reflect.toBack();
 		return [mainEl, light, text, reflect];
 	},
@@ -214,21 +218,97 @@ Raphael.fn.pcElementDrawer = {
 			+ " Q" + (x + w / 5) + " " + (y + h + h / 5)+ " " + x + " " + (y + h)
 			+ " L" + x + " " + y + " Z"
 		).initZoom();
-		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": 1, opacity: 1, "cursor": "pointer"});
+		mainBox.setAttr({fill: colors[0], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"});
 		// Reflection
 		var reflect = this.path(
 			"M" + x + " " + (y + h)
-			+ " Q" + (x + w / 5) + " " + (y + h - h / 5)+ " " + (x + w / 2) + " " + (y + h)
+			+ " Q" + (x + w / 5) + " " + (y + h + h / 5)+ " " + (x + w / 2) + " " + (y + h)
 			+ " Q" + (x + w - w / 5) + " " + (y + h + h / 5)+ " " + (x + w) + " " + (y + h)
 			+ " L" + (x + w) + " " + (y + h + h / 2)
 			+ " L" + x + " " + (y + h + h / 2)
 			+ " L" + x + " " + (y + h) + " Z"
 		).initZoom();
 		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
-		text.toFront();
+		text.toBack();
+		mainBox.toBack();
 		reflect.toBack();
 		return [mainBox, text, reflect];
-	}
+	},
+	
+	// draws an element as a cube representation
+	cube: function(maxx, maxy, fsize, colors, title) {
+		var x = Math.floor(Math.random() * maxx + 1);
+		var y = Math.floor(Math.random() * maxy + 1);	
+		// Text
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: colors[2], "text-anchor": "start", "cursor": "pointer"});
+		var w = text.getBBox().width + 23;
+		var h = text.getBBox().height + 23;
+		var dx = 0;
+		var dy = 0;
+		if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
+		if((y + h + 5) > maxy) y = y - ((y + h + 5) - maxy);
+		text.translate(x + 12 - text.attr("x"), y + (h / 2) - text.attr("y"));
+		text.initZoom();
+		// MainFace
+		var mainFace = this.path(
+			"M" + (x + w) + " " + y
+			+ " L" + (x + w) + " " + (y + h)
+			+ " L" + x + " " + (y + h)
+			+ " L" + x + " " + y
+			+ " L" + (x + w / 4) + " " + (y - h / 4)
+			+ " L" + (x + w + w / 4) + " " + (y - h / 4)
+			+ " L" + (x + w) + " " + y
+			+ " M" + x + " " + y 
+			+ " L" + (x + w) + " " + y + " Z"
+		).attr({fill: colors[0], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"}).initZoom();
+		// SideFace
+		var sideFace = this.path(
+			" M" + (x + w) + " " + (y + h)
+			+ " L" + (x + w + w / 4) + " " + (y + h - h / 4)
+			+ " L" + (x + w + w / 4) + " " + (y - h / 4)
+			+ " L" + (x + w) + " " + (y) 
+			+ " L" + (x + w) + " " + (y + h) + " Z"
+		).attr({fill: colors[0], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"}).initZoom();
+		// Reflect
+		var reflect = this.rect(x, y + h - h / 4, w + w / 4, h / 2).initZoom();
+		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
+		text.toBack();
+		mainFace.toBack();
+		sideFace.toBack();
+		reflect.toBack();
+		return [mainFace, sideFace, text, reflect];
+	},
+	
+	// draws an element as a sheets stake representation
+	sheet: function(maxx, maxy, fsize, colors, title) {
+		var x = Math.floor(Math.random() * maxx + 1);
+		var y = Math.floor(Math.random() * maxy + 1);	
+		// Text
+		var text = this.text(x + 12, y, title).attr({"font-size": fsize, "font-family": "Verdana", "font-weight": "bold", fill: colors[2], "text-anchor": "start", "cursor": "pointer"});
+		var w = text.getBBox().width + 23;
+		var h = text.getBBox().height + 23;
+		var dx = 0;
+		var dy = 0;
+		if((x + w + 5) > maxx) x = x - ((x + w + 5) - maxx);
+		if((y + h + 5) > maxy) y = y - ((y + h + 5) - maxy);
+		text.translate(x + 12 - text.attr("x"), y + (h / 2) - text.attr("y"));
+		text.initZoom();
+		// MainSheet
+		var mainSheet = this.rect(x, y, w, h).attr({fill: colors[0], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"}).initZoom();
+		// FirstBackSheet
+		var firstBackSheet = this.rect(x + w / 15, y - h / 15, w, h).attr({fill: colors[0].split("-")[1], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"}).initZoom();
+		//SecondBackSheet
+		var secondBackSheet = this.rect(x + 2 * w / 15, y - 2 * h / 15, w, h).attr({fill: colors[0].split("-")[1], stroke: colors[2], "stroke-width": .4, opacity: 1, "cursor": "pointer"}).initZoom();
+		// Reflect
+		var reflect = this.rect(x, y + h - 2 * h / 15, w + 2 * w / 15, h / 2).initZoom();
+		reflect.setAttr({fill: colors[1], stroke: "none", opacity: .4});
+		text.toBack();
+		mainSheet.toBack();
+		firstBackSheet.toBack();
+		secondBackSheet.toBack();
+		reflect.toBack();
+		return [mainSheet, firstBackSheet, secondBackSheet, text, reflect];
+	},
 }
 
 // Class KBElement
@@ -326,6 +406,12 @@ function KBElement(type, representation, fzise, data) {
 			case "flag":
 				this.raphElement = this.canvas.pcElementDrawer.flag(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
 				break;
+			case "cube":
+				this.raphElement = this.canvas.pcElementDrawer.cube(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
+				break;
+			case "sheet":
+				this.raphElement = this.canvas.pcElementDrawer.sheet(KBGraphic.width - 51, KBGraphic.height - 51, fsize, colors, data);
+				break;
 		}
 	};
 	
@@ -378,7 +464,7 @@ function KBElement(type, representation, fzise, data) {
 					var n0x = elements[0].ox + dx;
 					var n0y = elements[0].oy + dy;
 					if(n0x < 0) n0x = 12;
-					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].w) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].w;
 					if(n0y < 0) n0y = 0;
 					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h;
 					var path0 = elements[0].pathToR();
@@ -389,7 +475,7 @@ function KBElement(type, representation, fzise, data) {
 					var n1x = elements[1].ox + dx;
 					var n1y = elements[1].oy + dy;
 					if(n1x < 0) n1x = 0;
-					if(n1x + elements[0].w > KBGraphic.width * KBGraphic.zoomValue) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
+					if(n1x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
 					if(n1y < elements[1].h) n1y = elements[1].h;
 					if(n1y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h + elements[1].h) n1y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[3].h + elements[1].h;
 					var path1 = elements[1].pathToR();
@@ -530,7 +616,7 @@ function KBElement(type, representation, fzise, data) {
 				elements[0].drag(move, start, up);
 				elements[1].drag(move, start, up);
 				elements[2].drag(move, start, up);
-			case "file":
+			case "flag":
 				var start = function() {
 					// mainBox
 					var path0 = elements[0].pathToR();
@@ -554,7 +640,7 @@ function KBElement(type, representation, fzise, data) {
 					elements[2].w = dim2.width;
 					elements[2].h = dim2.height;
 					elements[2].oop = elements[2].attr("opacity");
-					elements[2].animate({"fill-opacity": 0}, 622);
+					elements[2].animate({"fill-opacity": 0}, 600);
 					// saves opacity - if not set, saves as 1
 					for(var s = 0; s < elements.length; s++) {
 						if(elements[s].attr("opacity")) {
@@ -573,8 +659,8 @@ function KBElement(type, representation, fzise, data) {
 					// mainBox
 					var n0x = elements[0].ox + dx;
 					var n0y = elements[0].oy + dy;
-					if(n0x < 0) n0x = 12;
-					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + elements[1].h;
+					if(n0x < 0) n0x = 0;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w;
 					if(n0y < 0) n0y = 0;
 					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[2].h) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - elements[2].h;
 					var path0 = elements[0].pathToR();
@@ -584,10 +670,111 @@ function KBElement(type, representation, fzise, data) {
 					// text
 					var n1x = elements[1].ox + dx;
 					var n1y = elements[1].oy + dy;
-					if(n2x < 0) n2x = 15;
-					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[2].w - 15;
-					if(n2y < 12 + elements[2].h / 2) n2y = elements[2].h / 2 + 12;
-					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[3].h;
+					if(n1x < 0) n1x = 15;
+					if(n1x > KBGraphic.width * KBGraphic.zoomValue - elements[1].w - 15) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[1].w - 15;
+					if(n1y < 12 + elements[1].h / 2) n1y = elements[1].h / 2 + 12;
+					if(n1y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[2].h) n1y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 2 - elements[2].h;
+					elements[1].setAttr({
+						x: n1x, 
+						y: n1y
+					});
+					// reflection
+					var n2x = elements[2].ox + dx;
+					var n2y = elements[2].oy + dy;
+					if(n2x < 0) n2x = 0;
+					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[2].w) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[2].w;
+					if(n2y < elements[0].h) n2y = elements[0].h;
+					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[2].h) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[2].h;
+					var path2 = elements[2].pathToR();
+					path2[0][1] = n2x;
+					path2[0][2] = n2y;
+					elements[2].setAttr({path: path2});
+					for (var i = links.length; i--;) {
+						this.paper.connection(links[i]);
+					}
+				},
+				up = function() {
+					elements[0].animate({"fill-opacity": elements[0].oop}, 600);
+					elements[2].animate({"fill-opacity": elements[2].oop}, 600);
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": .8});
+					}
+				};
+				elements[0].drag(move, start, up);
+				elements[1].drag(move, start, up);
+				break;
+			case "cube":
+				var start = function() {
+					// mainFace
+					var path0 = elements[0].pathToR();
+					var dim0 = elements[0].pathDim(path0);
+					elements[0].ox = path0[0][1];
+					elements[0].oy = path0[0][2];
+					elements[0].w = dim0.width;
+					elements[0].h = dim0.height;
+					elements[0].animate({"fill-opacity": 0}, 600);
+					// sideFace
+					var path1 = elements[1].pathToR();
+					var dim1 = elements[1].pathDim(path1);
+					elements[1].ox = path1[0][1];
+					elements[1].oy = path1[0][2];
+					elements[1].w = dim1.width;
+					elements[1].h = dim1.height;
+					elements[1].animate({"fill-opacity": 0}, 600);
+					// text
+					elements[2].ox = elements[2].attr("x");
+					elements[2].oy = elements[2].attr("y");
+					elements[2].w = elements[2].getBBox().width;
+					elements[2].h = elements[2].getBBox().height;
+					// reflection
+					elements[3].ox = elements[3].attr("x");
+					elements[3].oy = elements[3].attr("y");
+					elements[3].w = elements[3].attr("width");
+					elements[3].h = elements[3].attr("height");
+					// saves opacity - if not set, saves as 1
+					for(var s = 0; s < elements.length; s++) {
+						if(elements[s].attr("opacity")) {
+							elements[s].oop = elements[s].attr("opacity");
+						}
+						else {
+							elements[s].oop = 1;
+						}
+					}
+					// update connection links
+					for(var i = 0; i < links.length; i++) {
+						links[i].line.attr({"stroke-width": 2.5});
+					}
+				},
+				move = function(dx, dy) {
+					// mainFace
+					var n0x = elements[0].ox + dx;
+					var n0y = elements[0].oy + dy;
+					if(n0x < elements[0].w - elements[0].w / 4) n0x = elements[0].w - elements[0].w / 4;
+					if(n0x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w / 4) n0x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w / 4;
+					if(n0y < elements[0].h / 4) n0y = elements[0].h / 4;
+					if(n0y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - 2.5) n0y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - 2.5;
+					var path0 = elements[0].pathToR();
+					path0[0][1] = n0x;
+					path0[0][2] = n0y;
+					elements[0].setAttr({path: path0});
+					// sideFace
+					var n1x = elements[1].ox + dx;
+					var n1y = elements[1].oy + dy;
+					if(n1x < elements[0].w - elements[0].w / 4) n1x = elements[0].w - elements[0].w / 4;
+					if(n1x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w / 4) n1x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w / 4;
+					if(n1y < elements[1].h + 2.5) n1y = elements[1].h + 2.5;
+					if(n1y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 4) n1y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h / 4;
+					var path1 = elements[1].pathToR();
+					path1[0][1] = n1x;
+					path1[0][2] = n1y;
+					elements[1].setAttr({path: path1});
+					// text
+					var n2x = elements[2].ox + dx;
+					var n2y = elements[2].oy + dy;
+					if(n2x < ((3 * elements[0].w / 4) - elements[2].w) / 2) n2x = ((3 * elements[0].w / 4) - elements[2].w) / 2;
+					if(n2x > KBGraphic.width * KBGraphic.zoomValue - elements[0].w + ((3 * elements[0].w / 4) - elements[2].w) / 2) n2x = KBGraphic.width * KBGraphic.zoomValue - elements[0].w + ((3 * elements[0].w / 4) - elements[2].w) / 2;
+					if(n2y < elements[0].h / 4 + 2.5 + (3 * elements[0].h / 4) / 2) n2y = elements[0].h / 4 + 2.5 + (3 * elements[0].h / 4) / 2;
+					if(n2y > KBGraphic.height * KBGraphic.zoomValue - elements[0].h - 2.5 + (3 * elements[0].h / 4) / 2) n2y = KBGraphic.height * KBGraphic.zoomValue - elements[0].h - 2.5 + (3 * elements[0].h / 4) / 2;
 					elements[2].setAttr({
 						x: n2x, 
 						y: n2y
@@ -595,9 +782,9 @@ function KBElement(type, representation, fzise, data) {
 					// reflection
 					var n3x = elements[3].ox + dx;
 					var n3y = elements[3].oy + dy;
-					if(n3x < 0) n3x = 0;
-					if(n3x > KBGraphic.width * KBGraphic.zoomValue - elements[3].w) n3x = KBGraphic.width * KBGraphic.zoomValue - elements[3].w;
-					if(n3y < elements[0].h) n3y = elements[0].h;
+					if(n3x < -2.5) n3x = -2.5;
+					if(n3x > KBGraphic.width * KBGraphic.zoomValue - elements[3].w - 2.5) n3x = KBGraphic.width * KBGraphic.zoomValue - elements[3].w - 2.5;
+					if(n3y < elements[0].h - elements[0].h / 4) n3y = elements[0].h - elements[0].h / 4;
 					if(n3y > KBGraphic.height * KBGraphic.zoomValue - elements[3].h) n3y = KBGraphic.height * KBGraphic.zoomValue - elements[3].h;
 					elements[3].setAttr({
 						x: n3x, 
@@ -609,6 +796,7 @@ function KBElement(type, representation, fzise, data) {
 				},
 				up = function() {
 					elements[0].animate({"fill-opacity": elements[0].oop}, 600);
+					elements[1].animate({"fill-opacity": elements[0].oop}, 600);
 					for(var i = 0; i < links.length; i++) {
 						links[i].line.attr({"stroke-width": .8});
 					}
@@ -616,7 +804,6 @@ function KBElement(type, representation, fzise, data) {
 				elements[0].drag(move, start, up);
 				elements[1].drag(move, start, up);
 				elements[2].drag(move, start, up);
-				break;
 			default:
 				break;
 		}
@@ -776,13 +963,13 @@ var KBGraphic = new function() {
 	};
 		
 	this.draw = function() {
-		var r = new KBElement("offer", "flag", 10, ["Offre 01", "Offre 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Bah oui !!!!!!!!!!!!!"]);
+		var r = new KBElement("offer", "ball", 10, ["Offre 01", "Offre 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Bah oui !!!!!!!!!!!!!"]);
 		r.init();
-		var s = new KBElement("offer", "file", 10, ["Offre 02", "Offre 02<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Non ?!!!!"]);
+		var s = new KBElement("offer", "ball", 10, ["Offre 02", "Offre 02<br /><br />Description : OK.<br /><br />Commentaires : Je suis une offre<br />Entrée : Non ?!!!!"]);
 		s.init();
-		var t = new KBElement("step", "ball", 10, ["Étape 01","Étape 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une étape<br />Entrée : Ok !!!!!!!!!!!!!"]);
+		var t = new KBElement("step", "cube", 10, ["Étape 01","Étape 01<br /><br />Description : OK.<br /><br />Commentaires : Je suis une étape<br />Entrée : Ok !!!!!!!!!!!!!"]);
 		t.init();
-		var a = new KBElement("process", "ball", 10, ["Processus 01", "Processus 01<br /><br />Description : OK.<br /><br />Commentaires : Aucun<br />Test : Ok !!!!!!!!!!!!!"]);
+		var a = new KBElement("process", "sheet", 10, ["Processus 01", "Processus 01<br /><br />Description : OK.<br /><br />Commentaires : Aucun<br />Test : Ok !!!!!!!!!!!!!"]);
 		a.init();
 		var b = new KBElement("act", "file", 10, ["Acte 01", "Acte 01<br /><br />Description : OK.<br /><br />Commentaires : Aucun<br />Test : Ok !!!!!!!!!!!!!"]);
 		b.init();
@@ -790,9 +977,9 @@ var KBGraphic = new function() {
 		c.init();
 		var d = new KBElement("act", "file", 10, ["Acte 03", "Acte 03<br /><br />Description : OK.<br /><br />Commentaires : ******<br />Test : Ok !!!!!!!!!!!!!"]);
 		d.init();
-		var e = new KBElement("task", "file", 10, ["Tâche 01", "Tâche 01<br /><br />Description : OK.<br /><br />Commentaires : *+++++**<br />Test : Ok !!!!!!!!!!!!!"]);
+		var e = new KBElement("task", "flag", 10, ["Tâche 01", "Tâche 01<br /><br />Description : OK.<br /><br />Commentaires : *+++++**<br />Test : Ok !!!!!!!!!!!!!"]);
 		e.init();
-		var f = new KBElement("task", "file", 10, ["Tâche 02", "Tâche 02<br /><br />Description : OK.<br /><br />Commentaires : **+++-+-++*<br />Test : Ok !!!!!!!!!!!!!"]);
+		var f = new KBElement("task", "flag", 10, ["Tâche 02", "Tâche 02<br /><br />Description : OK.<br /><br />Commentaires : **+++-+-++*<br />Test : Ok !!!!!!!!!!!!!"]);
 		f.init();
 		a.linkedElements.push(b, c, d);
 		a.drawLink();
